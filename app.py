@@ -11,10 +11,16 @@ st.set_page_config(
     layout="centered"
 )
 
-# ================= LOAD MODEL (UNCHANGED) =================
-model = joblib.load("model/fatigue_model.pkl")
+# ================= SAFE MODEL LOAD (ONLY FIX) =================
+model = None
+model_error = None
 
-# ================= AESTHETIC UI (POLISHED) =================
+try:
+    model = joblib.load("model/fatigue_model.pkl")
+except Exception as e:
+    model_error = str(e)
+
+# ================= AESTHETIC UI =================
 st.markdown("""
 <style>
 body {
@@ -38,7 +44,7 @@ h2, h3 {
     margin-bottom: 26px;
 }
 
-/* 🌸 Button hover animation */
+/* Button hover */
 .stButton > button {
     background: linear-gradient(90deg, #a18cd1, #fbc2eb);
     color: #222;
@@ -56,7 +62,7 @@ h2, h3 {
     box-shadow: 0px 8px 20px rgba(161, 140, 209, 0.45);
 }
 
-/* 🌈 Gradient divider */
+/* Divider */
 .divider {
     height: 2px;
     border-radius: 4px;
@@ -70,7 +76,7 @@ h2, h3 {
     margin: 18px 0 26px 0;
 }
 
-/* 🌸 Pastel progress bar */
+/* Progress bar */
 .progress-wrapper {
     background: #f2f1ff;
     border-radius: 12px;
@@ -96,6 +102,16 @@ st.write(
 
 st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
+# ================= MODEL ERROR HANDLING =================
+if model_error:
+    st.error("Model could not be loaded")
+    st.write(
+        "The model file appears to be incomplete or corrupted. "
+        "This can happen during deployment or git sync."
+    )
+    st.code(model_error)
+    st.stop()
+
 # ================= INPUT CARD =================
 st.markdown("<div class='card'>", unsafe_allow_html=True)
 st.subheader("Daily Usage Overview")
@@ -108,15 +124,9 @@ with c1:
     sleep = st.slider("Sleep duration (hours)", 3.0, 10.0, 7.0, 0.5)
 
 with c2:
-    continuous_usage = st.slider(
-        "Longest continuous usage (minutes)", 10, 300, 90, 10
-    )
-    eye_strain = st.select_slider(
-        "Eye strain level", [1, 2, 3, 4, 5], 3
-    )
-    task_switch = st.slider(
-        "Task switching frequency", 1, 50, 18
-    )
+    continuous_usage = st.slider("Longest continuous usage (minutes)", 10, 300, 90, 10)
+    eye_strain = st.select_slider("Eye strain level", [1, 2, 3, 4, 5], 3)
+    task_switch = st.slider("Task switching frequency", 1, 50, 18)
 
 predict = st.button("Analyze Fatigue")
 
@@ -128,7 +138,7 @@ if predict:
         screen_time,
         continuous_usage,
         night_usage,
-        4,  # breaks_per_day
+        4,
         sleep,
         eye_strain,
         task_switch
@@ -145,13 +155,11 @@ if predict:
     fatigue = model.predict(input_df)[0]
     fatigue_pct = min(max(fatigue, 0), 100)
 
-    # ================= RESULT CARD =================
+    # ================= RESULT =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("Fatigue Level")
-
     st.write(f"**{fatigue_pct:.1f} / 100**")
 
-    # 🌸 Pastel progress bar
     st.markdown(
         f"""
         <div class="progress-wrapper">
@@ -195,20 +203,8 @@ if predict:
     y_pos = np.arange(len(factors))
 
     fig, ax = plt.subplots(figsize=(5, 3.5))
-    ax.hlines(
-        y=y_pos,
-        xmin=0,
-        xmax=values,
-        color="#cdb4db",
-        linewidth=3
-    )
-    ax.plot(
-        values,
-        y_pos,
-        "o",
-        color="#6c63ff",
-        markersize=8
-    )
+    ax.hlines(y=y_pos, xmin=0, xmax=values, color="#cdb4db", linewidth=3)
+    ax.plot(values, y_pos, "o", color="#6c63ff", markersize=8)
 
     ax.set_yticks(y_pos)
     ax.set_yticklabels(factors)
