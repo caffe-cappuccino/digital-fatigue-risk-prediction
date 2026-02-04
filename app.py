@@ -7,7 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
-    page_title="Digital Fatigue ✨",
+    page_title="Digital Fatigue",
     page_icon="🌸",
     layout="centered"
 )
@@ -22,14 +22,14 @@ def load_model():
 
 model, model_error = load_model()
 
-# ================= GEN-Z PASTEL STYLE =================
+# ================= SOFT PASTEL UI =================
 st.markdown("""
 <style>
 body {
     background: linear-gradient(135deg, #fdfbfb, #ebedee);
 }
 h1 {
-    color: #5f5cff;
+    color: #6c63ff;
     font-weight: 700;
 }
 h2, h3 {
@@ -40,13 +40,13 @@ p {
 }
 .card {
     background: #ffffff;
-    padding: 20px;
-    border-radius: 22px;
-    box-shadow: 0px 8px 20px rgba(0,0,0,0.08);
-    margin-bottom: 22px;
+    padding: 22px;
+    border-radius: 24px;
+    box-shadow: 0px 10px 24px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
 }
 .stButton > button {
-    background: linear-gradient(90deg, #ff9a9e, #fad0c4);
+    background: linear-gradient(90deg, #a18cd1, #fbc2eb);
     color: #222;
     border-radius: 30px;
     height: 3em;
@@ -62,36 +62,35 @@ p {
 """, unsafe_allow_html=True)
 
 # ================= HEADER =================
-st.title("🌸 Digital Fatigue Check")
+st.title("🌸 Digital Fatigue Monitor")
 st.write(
-    "hey bestie 👋  
-    let’s see how tired your **digital life** is making you 💻🧠  
-    no judgement, just vibes ✨"
+    "A calm, minimal interface to understand how daily digital habits "
+    "impact mental and physical fatigue."
 )
 
 # ================= MODEL ERROR =================
 if model_error:
-    st.error("oops 😭 something went wrong loading the brain")
+    st.error("Model could not be loaded.")
     st.code(model_error)
     st.stop()
 
 # ================= INPUT CARD =================
 st.markdown("<div class='card'>", unsafe_allow_html=True)
-st.subheader("🧩 tell me about your day")
+st.subheader("Daily Usage Overview")
 
 c1, c2 = st.columns(2)
 
 with c1:
-    screen_time = st.slider("📱 screen time (hrs)", 1.0, 16.0, 6.0, 0.5)
-    night_usage = st.slider("🌙 late night scrolling (hrs)", 0.0, 8.0, 1.5, 0.5)
-    sleep = st.slider("😴 sleep (hrs)", 3.0, 10.0, 7.0, 0.5)
+    screen_time = st.slider("Screen time (hours)", 1.0, 16.0, 6.0, 0.5)
+    night_usage = st.slider("Late-night usage (hours)", 0.0, 8.0, 1.5, 0.5)
+    sleep = st.slider("Sleep duration (hours)", 3.0, 10.0, 7.0, 0.5)
 
 with c2:
-    continuous_usage = st.slider("⏱ binge usage (mins)", 10, 300, 90, 10)
-    eye_strain = st.select_slider("👀 eye strain", [1,2,3,4,5], 3)
-    task_switch = st.slider("🔁 app switching", 1, 50, 18)
+    continuous_usage = st.slider("Longest continuous usage (minutes)", 10, 300, 90, 10)
+    eye_strain = st.select_slider("Eye strain level", [1, 2, 3, 4, 5], 3)
+    task_switch = st.slider("Task switching frequency", 1, 50, 18)
 
-predict = st.button("✨ check my fatigue")
+predict = st.button("Analyze Fatigue")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -101,7 +100,7 @@ if predict:
         screen_time,
         continuous_usage,
         night_usage,
-        4,
+        4,  # breaks_per_day fixed
         sleep,
         eye_strain,
         task_switch
@@ -118,26 +117,25 @@ if predict:
     raw_pred = model.predict(input_df)
     fatigue = float(np.array(raw_pred).reshape(-1)[0])
 
-    # ================= RESULT CARD =================
+    # ================= RESULT =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("🧠 your fatigue score")
-
-    st.metric("fatigue level", f"{fatigue:.1f} / 100")
+    st.subheader("Fatigue Score")
+    st.metric("Predicted fatigue level", f"{fatigue:.1f} / 100")
 
     if fatigue < 35:
-        st.success("💖 you’re doing okay bestie, keep it up!")
+        st.success("Low fatigue detected. Current habits appear balanced.")
     elif fatigue < 65:
-        st.warning("💛 a little tired — maybe slow down today")
+        st.warning("Moderate fatigue detected. Some adjustment may help.")
     else:
-        st.error("💔 you’re exhausted, pls rest 😭")
+        st.error("High fatigue detected. Rest and recovery are recommended.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= CUTE 3D CONTRIBUTION GRAPH =================
+    # ================= SMALL 3D CONTRIBUTION GRAPH =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("🎨 what’s draining you the most")
+    st.subheader("Key Contributing Factors")
 
-    factors = ["screen", "night", "sleep", "eyes", "switching"]
+    factors = ["Screen", "Night Use", "Low Sleep", "Eye Strain", "Switching"]
     contrib = np.array([
         screen_time / 16,
         night_usage / 8,
@@ -147,43 +145,44 @@ if predict:
     ]) * 100
 
     fig = plt.figure(figsize=(5, 4))
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection="3d")
     xs = np.arange(len(factors))
 
     ax.bar3d(xs, np.zeros(len(xs)), np.zeros(len(xs)),
-             0.5, 0.5, contrib, color="#ffb6c1", shade=True)
+             0.5, 0.5, contrib,
+             color="#cdb4db", shade=True)
 
     ax.set_xticks(xs)
     ax.set_xticklabels(factors, rotation=20)
-    ax.set_zlabel("impact %")
-    ax.set_title("digital energy drain")
+    ax.set_zlabel("Impact (%)")
+    ax.set_title("Estimated Contribution")
 
     st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ================= ADVICE =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("🌱 gentle reminders")
+    st.subheader("Suggested Adjustments")
 
     tips = []
     if screen_time > 8:
-        tips.append("📱 log off a little earlier today")
+        tips.append("Reduce total daily screen exposure.")
     if night_usage > 2:
-        tips.append("🌙 doomscrolling isn’t self-care bestie")
+        tips.append("Limit screen usage close to bedtime.")
     if sleep < 6:
-        tips.append("😴 pls sleep, everything feels worse when tired")
+        tips.append("Aim for longer, consistent sleep.")
     if eye_strain >= 4:
-        tips.append("👀 blink. hydrate. look outside.")
+        tips.append("Take regular visual breaks during screen use.")
     if task_switch > 30:
-        tips.append("🧠 do one thing at a time, it’s okay")
+        tips.append("Reduce frequent task switching to lower mental load.")
 
     if tips:
         for t in tips:
             st.write("•", t)
     else:
-        st.write("✨ honestly? you’re balanced rn, proud of you")
+        st.write("No major issues detected. Maintain current habits.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= FOOTER =================
-st.caption("made with 💖, vibes & a tiny bit of ML ✨")
+st.caption("Designed with a calm, minimal aesthetic ✨")
