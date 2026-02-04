@@ -1,29 +1,23 @@
 import streamlit as st
-import joblib
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
-    page_title="Digital Fatigue",
+    page_title="Digital Fatigue Monitor",
     page_icon="🌸",
     layout="centered"
 )
 
-# ================= LOAD MODEL =================
-model = joblib.load("model/fatigue_model.pkl")
-
-# ================= CLEAN PREMIUM UI =================
+# ================= PREMIUM CLEAN UI =================
 st.markdown("""
 <style>
-
-/* Global background */
 body {
     background-color: #f7f8fc;
 }
-
-/* Headings */
 h1 {
     color: #2d2f7f;
     font-weight: 700;
@@ -31,8 +25,6 @@ h1 {
 h2, h3 {
     color: #2f2f2f;
 }
-
-/* Card */
 .card {
     background: white;
     padding: 28px;
@@ -40,8 +32,6 @@ h2, h3 {
     box-shadow: 0px 12px 30px rgba(0,0,0,0.08);
     margin-bottom: 36px;
 }
-
-/* Button */
 .stButton > button {
     background: linear-gradient(90deg, #6c63ff, #8f88ff);
     color: white;
@@ -52,8 +42,6 @@ h2, h3 {
     font-weight: 600;
     border: none;
 }
-
-/* Progress bar */
 .progress-wrapper {
     background: #ecebff;
     border-radius: 10px;
@@ -67,20 +55,64 @@ h2, h3 {
     border-radius: 10px;
     background: linear-gradient(90deg, #6c63ff, #8f88ff);
 }
-
-/* Section spacing */
-.section {
-    margin-bottom: 40px;
-}
-
 </style>
 """, unsafe_allow_html=True)
+
+# ================= LOAD DATA =================
+@st.cache_data
+def load_data():
+    return pd.read_csv("data/digital_fatigue.csv")
+
+df = load_data()
+
+# ================= TRAIN MODEL (IN-MEMORY) =================
+@st.cache_resource
+def train_model(data):
+    features = [
+        "screen_time_hours",
+        "continuous_usage_minutes",
+        "night_usage_hours",
+        "breaks_per_day",
+        "sleep_hours",
+        "eye_strain_level",
+        "task_switching_rate"
+    ]
+
+    X = data[features]
+
+    # Synthetic fatigue score (same logic as before)
+    raw = (
+        X["screen_time_hours"] * 6
+        + X["continuous_usage_minutes"] * 0.08
+        + X["night_usage_hours"] * 8
+        - X["breaks_per_day"] * 4
+        - X["sleep_hours"] * 7
+        + X["eye_strain_level"] * 10
+        + X["task_switching_rate"] * 1.5
+    )
+
+    y = (raw - raw.min()) / (raw.max() - raw.min()) * 100
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    model = RandomForestRegressor(
+        n_estimators=250,
+        max_depth=12,
+        random_state=42
+    )
+
+    model.fit(X_train, y_train)
+    return model, features
+
+model, FEATURES = train_model(df)
 
 # ================= HEADER =================
 st.title("Digital Fatigue Monitor")
 st.write(
-    "A premium analytics interface to understand how your digital habits "
-    "impact cognitive and physical fatigue."
+    "A clean, high-end interface that analyzes how digital habits "
+    "impact mental and physical fatigue."
 )
 
 # ================= INPUT =================
@@ -104,7 +136,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= PREDICTION =================
 if predict:
-    input_df = pd.DataFrame([[
+    input_df = pd.DataFrame([[ 
         screen_time,
         continuous_usage,
         night_usage,
@@ -112,45 +144,37 @@ if predict:
         sleep,
         eye_strain,
         task_switch
-    ]], columns=[
-        "screen_time_hours",
-        "continuous_usage_minutes",
-        "night_usage_hours",
-        "breaks_per_day",
-        "sleep_hours",
-        "eye_strain_level",
-        "task_switching_rate"
-    ])
+    ]], columns=FEATURES)
 
     fatigue = model.predict(input_df)[0]
-    fatigue_pct = min(max(fatigue, 0), 100)
+    fatigue = min(max(fatigue, 0), 100)
 
     # ================= RESULT =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("Fatigue Score")
-    st.write(f"**{fatigue_pct:.1f} / 100**")
+    st.write(f"**{fatigue:.1f} / 100**")
 
     st.markdown(
         f"""
         <div class="progress-wrapper">
-            <div class="progress-fill" style="width:{fatigue_pct}%;"></div>
+            <div class="progress-fill" style="width:{fatigue}%;"></div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
     if fatigue < 35:
-        st.success("Low fatigue detected. Your habits appear well balanced.")
+        st.success("Low fatigue detected. Your routine appears balanced.")
     elif fatigue < 65:
-        st.warning("Moderate fatigue detected. Small adjustments may help.")
+        st.warning("Moderate fatigue detected. Minor adjustments could help.")
     else:
-        st.error("High fatigue detected. Recovery is strongly recommended.")
+        st.error("High fatigue detected. Rest and recovery are recommended.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ================= LOLLIPOP CHART =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Key Contributors")
+    st.subheader("Key Contributing Factors")
 
     factors = [
         "Screen time",
@@ -186,29 +210,5 @@ if predict:
     st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= ADVICE =================
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Actionable Suggestions")
-
-    tips = []
-    if screen_time > 8:
-        tips.append("Reduce total daily screen exposure.")
-    if night_usage > 2:
-        tips.append("Avoid screen use close to bedtime.")
-    if sleep < 6:
-        tips.append("Increase sleep duration for recovery.")
-    if eye_strain >= 4:
-        tips.append("Follow the 20–20–20 eye care rule.")
-    if task_switch > 30:
-        tips.append("Limit frequent task switching to reduce cognitive load.")
-
-    if tips:
-        for t in tips:
-            st.write("•", t)
-    else:
-        st.write("No major risk factors detected. Keep maintaining your routine.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
 # ================= FOOTER =================
-st.caption("Clean • Premium • Insightful")
+st.caption("One file • No crashes • Cloud safe")
