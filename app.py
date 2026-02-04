@@ -11,10 +11,10 @@ st.set_page_config(
     layout="centered"
 )
 
-# ================= LOAD MODEL (UNCHANGED) =================
+# ================= LOAD MODEL (SIMPLE & STABLE) =================
 model = joblib.load("model/fatigue_model.pkl")
 
-# ================= SOFT PASTEL UI =================
+# ================= SOFT AESTHETIC UI =================
 st.markdown("""
 <style>
 body {
@@ -66,21 +66,27 @@ with c1:
     sleep = st.slider("Sleep duration (hours)", 3.0, 10.0, 7.0, 0.5)
 
 with c2:
-    continuous_usage = st.slider("Longest continuous usage (minutes)", 10, 300, 90, 10)
-    eye_strain = st.select_slider("Eye strain level", [1, 2, 3, 4, 5], 3)
-    task_switch = st.slider("Task switching frequency", 1, 50, 18)
+    continuous_usage = st.slider(
+        "Longest continuous usage (minutes)", 10, 300, 90, 10
+    )
+    eye_strain = st.select_slider(
+        "Eye strain level", [1, 2, 3, 4, 5], 3
+    )
+    task_switch = st.slider(
+        "Task switching frequency", 1, 50, 18
+    )
 
 predict = st.button("Analyze Fatigue")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= PREDICTION (UNCHANGED) =================
+# ================= PREDICTION =================
 if predict:
     input_df = pd.DataFrame([[
         screen_time,
         continuous_usage,
         night_usage,
-        4,  # breaks_per_day
+        4,  # breaks_per_day (fixed)
         sleep,
         eye_strain,
         task_switch
@@ -96,27 +102,23 @@ if predict:
 
     fatigue = model.predict(input_df)[0]
 
-    # ================= RESULT =================
+    # ================= RESULT CARD =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("Fatigue Score")
     st.metric("Predicted fatigue level", f"{fatigue:.1f} / 100")
 
     if fatigue < 35:
-        level = "Low"
-        color = "#b5ead7"
+        st.success("Low fatigue detected. Your habits look balanced.")
     elif fatigue < 65:
-        level = "Moderate"
-        color = "#fff1ac"
+        st.warning("Moderate fatigue detected. Some adjustments may help.")
     else:
-        level = "High"
-        color = "#ffb7b2"
+        st.error("High fatigue detected. Rest and recovery are recommended.")
 
-    st.write(f"**Fatigue category:** {level}")
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ================= LOLLIPOP CHART =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("What contributes the most")
+    st.subheader("Main Contributors")
 
     factors = [
         "Screen time",
@@ -137,8 +139,20 @@ if predict:
     y_pos = np.arange(len(factors))
 
     fig, ax = plt.subplots(figsize=(5, 3.5))
-    ax.hlines(y=y_pos, xmin=0, xmax=values, color="#cdb4db", linewidth=3)
-    ax.plot(values, y_pos, "o", color="#6c63ff", markersize=8)
+    ax.hlines(
+        y=y_pos,
+        xmin=0,
+        xmax=values,
+        color="#cdb4db",
+        linewidth=3
+    )
+    ax.plot(
+        values,
+        y_pos,
+        "o",
+        color="#6c63ff",
+        markersize=8
+    )
 
     ax.set_yticks(y_pos)
     ax.set_yticklabels(factors)
@@ -161,19 +175,19 @@ if predict:
     if screen_time > 8:
         tips.append("Reduce overall daily screen exposure.")
     if night_usage > 2:
-        tips.append("Avoid screens close to bedtime.")
+        tips.append("Limit screen usage close to bedtime.")
     if sleep < 6:
-        tips.append("Aim for longer, consistent sleep.")
+        tips.append("Aim for longer and more consistent sleep.")
     if eye_strain >= 4:
-        tips.append("Take frequent eye breaks (20–20–20 rule).")
+        tips.append("Take regular eye breaks (20–20–20 rule).")
     if task_switch > 30:
         tips.append("Reduce frequent context switching.")
 
     if tips:
-        for t in tips:
-            st.write("•", t)
+        for tip in tips:
+            st.write("•", tip)
     else:
-        st.write("Your habits look balanced. Keep maintaining them.")
+        st.write("Your habits look well balanced. Keep maintaining them.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
