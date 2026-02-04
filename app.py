@@ -20,32 +20,50 @@ try:
 except Exception as e:
     model_error = str(e)
 
-# ================= AESTHETIC UI =================
+# ================= GLOBAL CSS (FIXES WHITE BARS) =================
 st.markdown("""
 <style>
+
+/* 🌑 Background */
 body {
-    background: linear-gradient(135deg, #fdfbfb, #ebedee);
+    background: linear-gradient(135deg, #0f0f14, #151522);
 }
 
+/* 🔥 REMOVE STREAMLIT DEFAULT WHITE BLOCKS */
+section.main > div {
+    background: transparent !important;
+}
+
+.block-container {
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
+}
+
+/* Remove empty Streamlit containers */
+div[data-testid="stMarkdownContainer"]:empty {
+    display: none !important;
+}
+
+/* Headings */
 h1 {
-    color: #6c63ff;
+    color: #f3f1ff;
     font-weight: 700;
 }
 
 h2, h3 {
-    color: #444;
+    color: #e6e4ff;
 }
 
-/* 🌸 Card with MORE spacing */
+/* 🌸 Cards (ONLY white elements now) */
 .card {
-    background: white;
+    background: #ffffff;
     padding: 26px;
-    border-radius: 24px;
-    box-shadow: 0px 10px 24px rgba(0,0,0,0.08);
-    margin-bottom: 42px;   /* KEY CHANGE */
+    border-radius: 26px;
+    box-shadow: 0px 14px 30px rgba(0,0,0,0.35);
+    margin-bottom: 42px;
 }
 
-/* 🌸 Button hover animation */
+/* 🌸 Button */
 .stButton > button {
     background: linear-gradient(90deg, #a18cd1, #fbc2eb);
     color: #222;
@@ -59,14 +77,14 @@ h2, h3 {
 }
 
 .stButton > button:hover {
-    transform: scale(1.03);
-    box-shadow: 0px 8px 20px rgba(161, 140, 209, 0.45);
+    transform: scale(1.04);
+    box-shadow: 0px 10px 24px rgba(161, 140, 209, 0.55);
 }
 
-/* 🌸 Pastel progress bar */
+/* 🌸 Progress bar */
 .progress-wrapper {
-    background: #f2f1ff;
-    border-radius: 12px;
+    background: #ecebff;
+    border-radius: 14px;
     height: 14px;
     width: 100%;
     overflow: hidden;
@@ -74,9 +92,10 @@ h2, h3 {
 
 .progress-fill {
     height: 100%;
-    border-radius: 12px;
+    border-radius: 14px;
     background: linear-gradient(90deg, #a18cd1, #fbc2eb);
 }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -87,13 +106,9 @@ st.write(
     "affect fatigue levels."
 )
 
-# ================= MODEL ERROR HANDLING =================
+# ================= MODEL ERROR =================
 if model_error:
     st.error("Model could not be loaded")
-    st.write(
-        "The model file appears to be incomplete or corrupted. "
-        "Please retrain or re-upload the model file."
-    )
     st.code(model_error)
     st.stop()
 
