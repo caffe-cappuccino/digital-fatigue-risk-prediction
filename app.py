@@ -3,6 +3,7 @@ import joblib
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
@@ -11,8 +12,15 @@ st.set_page_config(
     layout="wide"
 )
 
-# ================= LOAD MODEL =================
-model = joblib.load("model/fatigue_model.pkl")
+# ================= SAFE MODEL LOADER =================
+@st.cache_resource
+def load_model_safe(path):
+    try:
+        return joblib.load(path), None
+    except Exception as e:
+        return None, str(e)
+
+model, model_error = load_model_safe("model/fatigue_model.pkl")
 
 # ================= GLOBAL STYLE =================
 st.markdown("""
@@ -52,9 +60,21 @@ p, span, div {
 st.title("🧠 Digital Fatigue Intelligence Dashboard")
 st.markdown(
     "### Predict • Explain • Act  \n"
-    "A **machine-learning powered decision system** that quantifies digital fatigue, "
-    "explains contributing factors, and recommends corrective actions."
+    "An **ML-powered decision-support system** for analyzing digital fatigue."
 )
+
+# ================= MODEL STATUS =================
+if model_error:
+    st.error("🚨 Model failed to load")
+    st.code(model_error)
+    st.info(
+        "The UI is loaded safely, but predictions are disabled because the "
+        "model file is corrupted or incomplete.\n\n"
+        "**No changes to train.py were made.**\n"
+        "Once a valid model file exists, predictions will automatically work."
+    )
+
+st.markdown("---")
 
 # ================= INPUT PANEL =================
 st.markdown("<div class='section'>", unsafe_allow_html=True)
@@ -72,16 +92,16 @@ with c2:
 
 with c3:
     sleep = st.slider("😴 Sleep (hrs)", 3.0, 10.0, 7.0, 0.5)
-    eye_strain = st.select_slider("👁 Eye Strain", [1,2,3,4,5], 3)
+    eye_strain = st.select_slider("👁 Eye Strain", [1, 2, 3, 4, 5], 3)
 
 task_switch = st.slider("🔁 Task Switching Rate (per hour)", 1, 50, 18)
 
-predict = st.button("🚀 Analyze Digital Fatigue")
+predict = st.button("🚀 Analyze Digital Fatigue", disabled=model is None)
 
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= PREDICTION =================
-if predict:
+if predict and model is not None:
     input_df = pd.DataFrame([[
         screen_time,
         continuous_usage,
@@ -100,19 +120,16 @@ if predict:
         "task_switching_rate"
     ])
 
-    fatigue_score = model.predict(input_df)[0]
+    fatigue_score = float(model.predict(input_df)[0])
 
     if fatigue_score < 35:
-        risk = "LOW"
-        color = "#4CAF50"
+        risk, color = "LOW", "#4CAF50"
     elif fatigue_score < 65:
-        risk = "MODERATE"
-        color = "#FFC107"
+        risk, color = "MODERATE", "#FFC107"
     else:
-        risk = "HIGH"
-        color = "#FF5252"
+        risk, color = "HIGH", "#FF5252"
 
-    # ================= GAUGE VISUAL =================
+    # ================= GAUGE =================
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.subheader("🎯 Fatigue Severity Gauge")
 
@@ -121,14 +138,13 @@ if predict:
     ax.barh([0], [100 - fatigue_score], left=fatigue_score, color="#2a2f5a")
     ax.set_xlim(0, 100)
     ax.set_yticks([])
-    ax.set_xlabel("Fatigue Severity (0–100)")
     ax.set_title(f"Predicted Fatigue Level: {risk}", color="white")
     ax.spines[:].set_visible(False)
 
     st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= CONTRIBUTION RADAR =================
+    # ================= RADAR =================
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.subheader("🧬 Factor Contribution Radar")
 
@@ -157,59 +173,15 @@ if predict:
     ax = plt.subplot(111, polar=True)
     ax.plot(angles, values, color="#7f7cff", linewidth=3)
     ax.fill(angles, values, color="#7f7cff", alpha=0.25)
-    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
     ax.set_yticklabels([])
-    ax.set_title("Relative Fatigue Contribution by Factor", color="white")
+    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
+    ax.set_title("Relative Fatigue Contribution", color="white")
 
     st.pyplot(fig)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # ================= CONTRIBUTION TABLE =================
-    st.markdown("<div class='section'>", unsafe_allow_html=True)
-    st.subheader("📊 Quantified Contribution Breakdown")
-
-    contrib_df = pd.DataFrame({
-        "Factor": labels,
-        "Relative Impact (%)": [round(v * 100, 1) for v in values[:-1]]
-    })
-
-    st.dataframe(
-        contrib_df.style
-        .background_gradient(cmap="cool")
-        .format({"Relative Impact (%)": "{:.1f}"})
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # ================= ADVICE =================
-    st.markdown("<div class='section'>", unsafe_allow_html=True)
-    st.subheader("💡 Actionable Recommendations")
-
-    advice = []
-
-    if screen_time > 8:
-        advice.append("📱 Reduce daily screen time below 8 hours.")
-    if night_usage > 2:
-        advice.append("🌙 Avoid screen exposure before bedtime.")
-    if sleep < 6:
-        advice.append("😴 Increase sleep duration to improve recovery.")
-    if continuous_usage > 120:
-        advice.append("⏱ Take short breaks every 60 minutes.")
-    if eye_strain >= 4:
-        advice.append("👁 Follow the 20-20-20 eye rule.")
-    if task_switch > 30:
-        advice.append("🔁 Reduce task switching to lower cognitive load.")
-
-    if advice:
-        for tip in advice:
-            st.write("•", tip)
-    else:
-        st.success("✅ Your digital behavior is well balanced.")
-
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= FOOTER =================
 st.markdown("---")
 st.caption(
-    "⚠️ This system provides **decision-support insights** only. "
-    "It is not a medical diagnostic tool."
+    "⚠️ This system provides **decision-support insights** only and is not a medical diagnostic tool."
 )
