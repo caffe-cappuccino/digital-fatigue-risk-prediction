@@ -11,37 +11,30 @@ st.set_page_config(
     layout="centered"
 )
 
-# ================= SAFE MODEL LOAD =================
+# ================= LOAD MODEL =================
 model = None
 model_error = None
-
 try:
     model = joblib.load("model/fatigue_model.pkl")
 except Exception as e:
     model_error = str(e)
 
-# ================= GLOBAL CSS (FIXES WHITE BARS) =================
+# ================= GLOBAL CSS (NO WHITE ANYTHING) =================
 st.markdown("""
 <style>
 
-/* 🌑 Background */
+/* Dark background */
 body {
-    background: linear-gradient(135deg, #0f0f14, #151522);
+    background: linear-gradient(135deg, #0e0e13, #161622);
 }
 
-/* 🔥 REMOVE STREAMLIT DEFAULT WHITE BLOCKS */
-section.main > div {
+/* Remove ALL Streamlit backgrounds */
+section.main > div,
+.block-container,
+div[data-testid="stVerticalBlock"],
+div[data-testid="stMarkdownContainer"],
+div[data-testid="stHorizontalBlock"] {
     background: transparent !important;
-}
-
-.block-container {
-    padding-top: 2.5rem !important;
-    padding-bottom: 2.5rem !important;
-}
-
-/* Remove empty Streamlit containers */
-div[data-testid="stMarkdownContainer"]:empty {
-    display: none !important;
 }
 
 /* Headings */
@@ -49,21 +42,16 @@ h1 {
     color: #f3f1ff;
     font-weight: 700;
 }
-
 h2, h3 {
     color: #e6e4ff;
 }
 
-/* 🌸 Cards (ONLY white elements now) */
-.card {
-    background: #ffffff;
-    padding: 26px;
-    border-radius: 26px;
-    box-shadow: 0px 14px 30px rgba(0,0,0,0.35);
-    margin-bottom: 42px;
+/* Text */
+p, span, label {
+    color: #d6d4ff !important;
 }
 
-/* 🌸 Button */
+/* Button */
 .stButton > button {
     background: linear-gradient(90deg, #a18cd1, #fbc2eb);
     color: #222;
@@ -75,25 +63,29 @@ h2, h3 {
     border: none;
     transition: all 0.25s ease;
 }
-
 .stButton > button:hover {
     transform: scale(1.04);
     box-shadow: 0px 10px 24px rgba(161, 140, 209, 0.55);
 }
 
-/* 🌸 Progress bar */
+/* Progress bar */
 .progress-wrapper {
-    background: #ecebff;
+    background: rgba(255,255,255,0.15);
     border-radius: 14px;
     height: 14px;
     width: 100%;
     overflow: hidden;
+    margin-top: 8px;
 }
-
 .progress-fill {
     height: 100%;
     border-radius: 14px;
     background: linear-gradient(90deg, #a18cd1, #fbc2eb);
+}
+
+/* Spacing between sections */
+.section {
+    margin-bottom: 48px;
 }
 
 </style>
@@ -102,7 +94,7 @@ h2, h3 {
 # ================= HEADER =================
 st.title("🌸 Digital Fatigue Monitor")
 st.write(
-    "A calm, minimal interface to understand how daily digital habits "
+    "A minimal interface to understand how daily digital habits "
     "affect fatigue levels."
 )
 
@@ -112,8 +104,8 @@ if model_error:
     st.code(model_error)
     st.stop()
 
-# ================= INPUT CARD =================
-st.markdown("<div class='card'>", unsafe_allow_html=True)
+# ================= INPUT SECTION =================
+st.markdown("<div class='section'>", unsafe_allow_html=True)
 st.subheader("Daily Usage Overview")
 
 c1, c2 = st.columns(2)
@@ -124,15 +116,9 @@ with c1:
     sleep = st.slider("Sleep duration (hours)", 3.0, 10.0, 7.0, 0.5)
 
 with c2:
-    continuous_usage = st.slider(
-        "Longest continuous usage (minutes)", 10, 300, 90, 10
-    )
-    eye_strain = st.select_slider(
-        "Eye strain level", [1, 2, 3, 4, 5], 3
-    )
-    task_switch = st.slider(
-        "Task switching frequency", 1, 50, 18
-    )
+    continuous_usage = st.slider("Longest continuous usage (minutes)", 10, 300, 90, 10)
+    eye_strain = st.select_slider("Eye strain level", [1, 2, 3, 4, 5], 3)
+    task_switch = st.slider("Task switching frequency", 1, 50, 18)
 
 predict = st.button("Analyze Fatigue")
 st.markdown("</div>", unsafe_allow_html=True)
@@ -160,8 +146,8 @@ if predict:
     fatigue = model.predict(input_df)[0]
     fatigue_pct = min(max(fatigue, 0), 100)
 
-    # ================= RESULT CARD =================
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    # ================= RESULT =================
+    st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.subheader("Fatigue Level")
     st.write(f"**{fatigue_pct:.1f} / 100**")
 
@@ -184,7 +170,7 @@ if predict:
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ================= LOLLIPOP CHART =================
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.subheader("Main Contributors")
 
     factors = [
@@ -206,27 +192,28 @@ if predict:
     y_pos = np.arange(len(factors))
 
     fig, ax = plt.subplots(figsize=(5, 3.5))
+    fig.patch.set_alpha(0)
+    ax.set_facecolor("none")
+
     ax.hlines(y=y_pos, xmin=0, xmax=values, color="#cdb4db", linewidth=3)
-    ax.plot(values, y_pos, "o", color="#6c63ff", markersize=8)
+    ax.plot(values, y_pos, "o", color="#fbc2eb", markersize=8)
 
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(factors)
-    ax.set_xlabel("Relative impact")
-    ax.set_title("Fatigue contributors")
+    ax.set_yticklabels(factors, color="#e6e4ff")
+    ax.set_xlabel("Relative impact", color="#e6e4ff")
+    ax.set_title("Fatigue contributors", color="#f3f1ff")
 
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
 
     st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= ADVICE CARD =================
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    # ================= ADVICE =================
+    st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.subheader("Suggestions")
 
     tips = []
-
     if screen_time > 8:
         tips.append("Reduce overall daily screen exposure.")
     if night_usage > 2:
@@ -247,4 +234,4 @@ if predict:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= FOOTER =================
-st.caption("Minimal • Calm • Aesthetic ✨")
+st.caption("Minimal • Dark • Clean ✨")
