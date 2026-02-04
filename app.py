@@ -12,28 +12,28 @@ st.set_page_config(
     layout="centered"
 )
 
-# ================= PREMIUM CLEAN UI =================
+# ================= PREMIUM UI =================
 st.markdown("""
 <style>
-body {
-    background-color: #f7f8fc;
-}
-h1 {
-    color: #2d2f7f;
-    font-weight: 700;
-}
-h2, h3 {
-    color: #2f2f2f;
-}
+body { background-color: #f6f7fb; }
+h1 { color: #2d2f7f; font-weight: 700; }
+h2, h3 { color: #2f2f2f; }
 .card {
     background: white;
-    padding: 28px;
+    padding: 26px;
     border-radius: 18px;
-    box-shadow: 0px 12px 30px rgba(0,0,0,0.08);
-    margin-bottom: 36px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    margin-bottom: 32px;
 }
+.kpi {
+    background: #f0f1ff;
+    padding: 18px;
+    border-radius: 14px;
+    text-align: center;
+}
+.kpi h2 { margin: 0; }
 .stButton > button {
-    background: linear-gradient(90deg, #6c63ff, #8f88ff);
+    background: linear-gradient(90deg,#6c63ff,#8f88ff);
     color: white;
     border-radius: 12px;
     height: 3em;
@@ -42,18 +42,15 @@ h2, h3 {
     font-weight: 600;
     border: none;
 }
-.progress-wrapper {
+.progress {
     background: #ecebff;
     border-radius: 10px;
     height: 12px;
-    width: 100%;
     overflow: hidden;
-    margin-top: 10px;
 }
-.progress-fill {
+.progress > div {
+    background: linear-gradient(90deg,#6c63ff,#8f88ff);
     height: 100%;
-    border-radius: 10px;
-    background: linear-gradient(90deg, #6c63ff, #8f88ff);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -65,22 +62,21 @@ def load_data():
 
 df = load_data()
 
-# ================= TRAIN MODEL (IN-MEMORY) =================
+FEATURES = [
+    "screen_time_hours",
+    "continuous_usage_minutes",
+    "night_usage_hours",
+    "breaks_per_day",
+    "sleep_hours",
+    "eye_strain_level",
+    "task_switching_rate"
+]
+
+# ================= TRAIN MODEL =================
 @st.cache_resource
 def train_model(data):
-    features = [
-        "screen_time_hours",
-        "continuous_usage_minutes",
-        "night_usage_hours",
-        "breaks_per_day",
-        "sleep_hours",
-        "eye_strain_level",
-        "task_switching_rate"
-    ]
+    X = data[FEATURES]
 
-    X = data[features]
-
-    # Synthetic fatigue score (same logic as before)
     raw = (
         X["screen_time_hours"] * 6
         + X["continuous_usage_minutes"] * 0.08
@@ -93,122 +89,114 @@ def train_model(data):
 
     y = (raw - raw.min()) / (raw.max() - raw.min()) * 100
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    model = RandomForestRegressor(
-        n_estimators=250,
-        max_depth=12,
-        random_state=42
-    )
+    model = RandomForestRegressor(n_estimators=300, max_depth=12, random_state=42)
+    model.fit(Xtr, ytr)
 
-    model.fit(X_train, y_train)
-    return model, features
+    return model, y.mean()
 
-model, FEATURES = train_model(df)
+model, avg_fatigue = train_model(df)
 
 # ================= HEADER =================
 st.title("Digital Fatigue Monitor")
-st.write(
-    "A clean, high-end interface that analyzes how digital habits "
-    "impact mental and physical fatigue."
-)
+st.write("A high-end analytics system to understand how digital habits impact fatigue.")
 
 # ================= INPUT =================
 st.markdown("<div class='card'>", unsafe_allow_html=True)
-st.subheader("Daily Usage Overview")
+st.subheader("Daily Usage Input")
 
 c1, c2 = st.columns(2)
-
 with c1:
-    screen_time = st.slider("Screen time (hours)", 1.0, 16.0, 6.0, 0.5)
-    night_usage = st.slider("Late-night usage (hours)", 0.0, 8.0, 1.5, 0.5)
-    sleep = st.slider("Sleep duration (hours)", 3.0, 10.0, 7.0, 0.5)
-
+    screen = st.slider("Screen time (hrs)", 1.0, 16.0, 6.0, 0.5)
+    night = st.slider("Late-night usage (hrs)", 0.0, 8.0, 1.5, 0.5)
+    sleep = st.slider("Sleep (hrs)", 3.0, 10.0, 7.0, 0.5)
 with c2:
-    continuous_usage = st.slider("Longest continuous usage (minutes)", 10, 300, 90, 10)
-    eye_strain = st.select_slider("Eye strain level", [1,2,3,4,5], 3)
-    task_switch = st.slider("Task switching frequency", 1, 50, 18)
+    cont = st.slider("Longest continuous usage (min)", 10, 300, 90, 10)
+    eye = st.select_slider("Eye strain", [1,2,3,4,5], 3)
+    switch = st.slider("Task switching", 1, 50, 18)
 
 predict = st.button("Analyze Fatigue")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= PREDICTION =================
+# ================= ANALYSIS =================
 if predict:
-    input_df = pd.DataFrame([[ 
-        screen_time,
-        continuous_usage,
-        night_usage,
-        4,
-        sleep,
-        eye_strain,
-        task_switch
-    ]], columns=FEATURES)
+    user_df = pd.DataFrame([[screen, cont, night, 4, sleep, eye, switch]], columns=FEATURES)
+    fatigue = float(model.predict(user_df)[0])
+    fatigue = np.clip(fatigue, 0, 100)
 
-    fatigue = model.predict(input_df)[0]
-    fatigue = min(max(fatigue, 0), 100)
-
-    # ================= RESULT =================
+    # ================= KPIs =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Fatigue Score")
-    st.write(f"**{fatigue:.1f} / 100**")
+    c1, c2, c3 = st.columns(3)
+    c1.markdown(f"<div class='kpi'><h2>{fatigue:.1f}</h2><p>Your score</p></div>", unsafe_allow_html=True)
+    c2.markdown(f"<div class='kpi'><h2>{avg_fatigue:.1f}</h2><p>Avg user</p></div>", unsafe_allow_html=True)
+    diff = fatigue - avg_fatigue
+    c3.markdown(f"<div class='kpi'><h2>{diff:+.1f}</h2><p>Difference</p></div>", unsafe_allow_html=True)
 
-    st.markdown(
-        f"""
-        <div class="progress-wrapper">
-            <div class="progress-fill" style="width:{fatigue}%;"></div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    if fatigue < 35:
-        st.success("Low fatigue detected. Your routine appears balanced.")
-    elif fatigue < 65:
-        st.warning("Moderate fatigue detected. Minor adjustments could help.")
-    else:
-        st.error("High fatigue detected. Rest and recovery are recommended.")
-
+    st.markdown(f"<div class='progress'><div style='width:{fatigue}%;'></div></div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= LOLLIPOP CHART =================
+    # ================= TABS =================
+    tab1, tab2, tab3 = st.tabs(["📊 Contributors", "🧠 Profile", "📈 Population"])
+
+    # -------- LOLLIPOP --------
+    with tab1:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        factors = ["Screen", "Night", "Low Sleep", "Eye", "Switching"]
+        values = np.array([screen, night, 10-sleep, eye, switch])
+        y = np.arange(len(factors))
+
+        fig, ax = plt.subplots(figsize=(5.5, 3.5))
+        ax.hlines(y, 0, values, color="#c7c5ff", linewidth=4)
+        ax.plot(values, y, "o", color="#6c63ff")
+        ax.set_yticks(y)
+        ax.set_yticklabels(factors)
+        ax.set_xlabel("Impact")
+        ax.set_title("Contribution Breakdown")
+        ax.spines[['top','right','left']].set_visible(False)
+        st.pyplot(fig)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # -------- RADAR --------
+    with tab2:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        radar_vals = values / values.max()
+        radar_vals = np.append(radar_vals, radar_vals[0])
+        angles = np.linspace(0, 2*np.pi, len(radar_vals))
+
+        fig = plt.figure(figsize=(4,4))
+        ax = fig.add_subplot(111, polar=True)
+        ax.plot(angles, radar_vals, color="#6c63ff", linewidth=2)
+        ax.fill(angles, radar_vals, color="#c7c5ff", alpha=0.5)
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(factors)
+        ax.set_yticklabels([])
+        ax.set_title("Your Digital Profile")
+        st.pyplot(fig)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # -------- DISTRIBUTION --------
+    with tab3:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        fig, ax = plt.subplots(figsize=(5.5,3))
+        ax.hist(df["screen_time_hours"], bins=20, color="#e6e5ff")
+        ax.axvline(screen, color="#6c63ff", linewidth=3)
+        ax.set_title("Screen Time vs Population")
+        ax.set_xlabel("Hours")
+        st.pyplot(fig)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ================= INSIGHTS =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Key Contributing Factors")
+    st.subheader("Actionable Insights")
+    if fatigue > 65:
+        st.error("High fatigue risk. Strong recovery needed.")
+    elif fatigue > 35:
+        st.warning("Moderate fatigue. Small optimizations recommended.")
+    else:
+        st.success("Low fatigue. Habits look balanced.")
 
-    factors = [
-        "Screen time",
-        "Night usage",
-        "Low sleep",
-        "Eye strain",
-        "Task switching"
-    ]
-
-    values = np.array([
-        screen_time,
-        night_usage,
-        10 - sleep,
-        eye_strain,
-        task_switch
-    ])
-
-    y_pos = np.arange(len(factors))
-
-    fig, ax = plt.subplots(figsize=(5.5, 3.8))
-    ax.hlines(y=y_pos, xmin=0, xmax=values, color="#c7c5ff", linewidth=4)
-    ax.plot(values, y_pos, "o", color="#6c63ff", markersize=8)
-
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(factors)
-    ax.set_xlabel("Relative impact")
-    ax.set_title("Fatigue contribution by factor")
-
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-
-    st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= FOOTER =================
-st.caption("One file • No crashes • Cloud safe")
+st.caption("One file • High-end • No crashes • Done.")
