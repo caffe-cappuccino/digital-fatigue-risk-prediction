@@ -9,7 +9,6 @@ import time
 # ================= PAGE CONFIG =================
 st.set_page_config(
     page_title="Digital Fatigue Intelligence",
-    page_icon="🧠",
     layout="wide"
 )
 
@@ -17,29 +16,25 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* ---------- ANIMATIONS ---------- */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ---------- BACKGROUND ---------- */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
 body {
     background:
         radial-gradient(circle at 15% 20%, #e0e7ff, transparent 40%),
         radial-gradient(circle at 85% 30%, #fce7f3, transparent 45%),
-        radial-gradient(circle at 50% 85%, #ecfeff, transparent 50%),
         linear-gradient(135deg, #f8fafc, #f1f5f9);
     color: #020617;
 }
 
-/* ---------- HEADINGS ---------- */
 h1 {
     font-weight: 900;
     letter-spacing: -1.4px;
@@ -51,16 +46,14 @@ h1 {
     font-size: 15px;
 }
 
-/* ---------- GLASS CARD ---------- */
+/* ---------- GLASS ---------- */
 .glass {
-    background: rgba(255, 255, 255, 0.72);
+    background: rgba(255,255,255,0.75);
     backdrop-filter: blur(14px);
     padding: 36px;
     border-radius: 24px;
     border: 1px solid rgba(255,255,255,0.4);
-    box-shadow:
-        0 30px 60px rgba(15,23,42,0.08),
-        inset 0 1px 0 rgba(255,255,255,0.6);
+    box-shadow: 0 30px 60px rgba(15,23,42,0.08);
     animation: fadeUp 0.6s ease;
     margin-bottom: 36px;
 }
@@ -70,17 +63,12 @@ h1 {
     background: linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.68));
     border-radius: 28px;
     padding: 38px 42px;
-    box-shadow:
-        0 45px 90px rgba(15,23,42,0.1),
-        inset 0 1px 0 rgba(255,255,255,0.75);
-    border: 1px solid rgba(255,255,255,0.45);
+    box-shadow: 0 45px 90px rgba(15,23,42,0.1);
     margin-bottom: 42px;
 }
 
 .panel-title {
     font-weight: 800;
-    letter-spacing: -0.4px;
-    margin-bottom: 6px;
 }
 
 .panel-subtitle {
@@ -93,7 +81,7 @@ h1 {
 .input-group {
     background: rgba(255,255,255,0.7);
     border-radius: 22px;
-    padding: 26px 28px;
+    padding: 26px;
     box-shadow: 0 18px 38px rgba(15,23,42,0.06);
     transition: all 0.25s ease;
 }
@@ -105,18 +93,16 @@ h1 {
 
 .group-title {
     font-weight: 700;
-    font-size: 14px;
-    text-transform: uppercase;
+    font-size: 13px;
     letter-spacing: 0.08em;
+    text-transform: uppercase;
     margin-bottom: 18px;
-    color: #020617;
 }
 
 /* ---------- METRICS ---------- */
 .metric {
     font-size: 46px;
     font-weight: 900;
-    letter-spacing: -1px;
 }
 
 .metric-label {
@@ -134,19 +120,17 @@ h1 {
     font-weight: 700;
     border: none;
     box-shadow: 0 16px 36px rgba(79,70,229,0.4);
-    transition: all 0.25s ease;
 }
 
 .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 24px 50px rgba(79,70,229,0.55);
 }
 
-/* ---------- ADVICE CARDS ---------- */
+/* ---------- ADVICE ---------- */
 .advice-card {
     background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
     border-radius: 20px;
-    padding: 24px 28px;
+    padding: 24px;
     box-shadow: 0 20px 45px rgba(15,23,42,0.1);
     border-left: 5px solid #6366f1;
     animation: float 7s ease-in-out infinite;
@@ -155,20 +139,11 @@ h1 {
 
 .advice-title {
     font-weight: 700;
-    margin-bottom: 6px;
-    color: #020617;
 }
 
 .advice-text {
     color: #475569;
     font-size: 14px;
-}
-
-/* ---------- DIVIDER ---------- */
-.divider {
-    height: 1px;
-    background: linear-gradient(to right, transparent, #e5e7eb, transparent);
-    margin: 28px 0;
 }
 
 </style>
@@ -205,13 +180,9 @@ def train_model(data):
         + X["task_switching_rate"] * 1.5
     )
     y = (raw - raw.min()) / (raw.max() - raw.min()) * 100
-    Xtr, _, ytr, _ = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    model = RandomForestRegressor(
-        n_estimators=300,
-        max_depth=12,
-        random_state=42
-    )
+    Xtr, _, ytr, _ = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestRegressor(n_estimators=300, max_depth=12, random_state=42)
     model.fit(Xtr, ytr)
     return model, y.mean()
 
@@ -219,16 +190,13 @@ model, avg_fatigue = train_model(df)
 
 # ================= HEADER =================
 st.markdown("<h1>Digital Fatigue Intelligence</h1>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Behavioral analytics engine for cognitive load and burnout risk</div>", unsafe_allow_html=True)
-st.write("")
+st.markdown("<div class='subtitle'>Behavioral analytics engine for cognitive load</div>", unsafe_allow_html=True)
 
-# ================= INPUT CONTROL PANEL =================
+# ================= INPUT =================
 st.markdown("""
 <div class="control-panel">
     <div class="panel-title">Behavioral Parameters</div>
-    <div class="panel-subtitle">
-        Tune system-level variables to simulate digital fatigue impact
-    </div>
+    <div class="panel-subtitle">Tune variables to simulate fatigue impact</div>
 """, unsafe_allow_html=True)
 
 c1, c2, c3 = st.columns(3)
@@ -241,7 +209,7 @@ with c1:
 
 with c2:
     st.markdown("<div class='input-group'><div class='group-title'>Cognitive Load</div>", unsafe_allow_html=True)
-    cont = st.slider("Longest Continuous Session (minutes)", 10, 300, 90, 10)
+    cont = st.slider("Continuous Session (minutes)", 10, 300, 90, 10)
     switch = st.slider("Task Switching Rate", 1, 50, 18)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -251,18 +219,12 @@ with c3:
     eye = st.select_slider("Eye Strain Severity", [1,2,3,4,5], 3)
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<div style='display:flex;justify-content:center;margin-top:38px;'>", unsafe_allow_html=True)
 run = st.button("Run Fatigue Assessment")
-st.markdown("</div></div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= RUN PIPELINE =================
+# ================= RUN =================
 if run:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
-    with st.spinner("Executing behavioral inference pipeline"):
-        progress = st.progress(0)
-        for i in range(100):
-            time.sleep(0.008)
-            progress.progress(i + 1)
 
     user_df = pd.DataFrame([[screen, cont, night, 4, sleep, eye, switch]], columns=FEATURES)
     fatigue = float(model.predict(user_df)[0])
@@ -271,50 +233,75 @@ if run:
     color = "#22c55e" if fatigue < 40 else "#f59e0b" if fatigue < 70 else "#ef4444"
 
     c1, c2, c3 = st.columns(3)
-    c1.markdown(f"<div class='metric' style='color:{color}'>{fatigue:.1f}</div><div class='metric-label'>Your fatigue score</div>", unsafe_allow_html=True)
-    c2.markdown(f"<div class='metric'>{avg_fatigue:.1f}</div><div class='metric-label'>Population baseline</div>", unsafe_allow_html=True)
+    c1.markdown(f"<div class='metric' style='color:{color}'>{fatigue:.1f}</div><div class='metric-label'>Fatigue Score</div>", unsafe_allow_html=True)
+    c2.markdown(f"<div class='metric'>{avg_fatigue:.1f}</div><div class='metric-label'>Baseline</div>", unsafe_allow_html=True)
     c3.markdown(f"<div class='metric'>{fatigue-avg_fatigue:+.1f}</div><div class='metric-label'>Deviation</div>", unsafe_allow_html=True)
+
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= ANALYSIS =================
+    # ================= ANIMATED GRAPH =================
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
     st.subheader("Primary Fatigue Contributors")
 
     factors = ["Screen Exposure", "Night Usage", "Sleep Deficit", "Visual Strain", "Context Switching"]
     values = [screen, night, 10-sleep, eye, switch]
 
-    fig = go.Figure(go.Bar(
-        x=values,
-        y=factors,
-        orientation="h",
-        marker=dict(color=color)
-    ))
+    frames = [
+        go.Frame(
+            data=[go.Bar(
+                x=[v * i / 20 for v in values],
+                y=factors,
+                orientation="h",
+                marker=dict(
+                    color=color,
+                    line=dict(width=0)
+                )
+            )]
+        )
+        for i in range(1, 21)
+    ]
+
+    fig = go.Figure(
+        data=[go.Bar(
+            x=[0]*len(values),
+            y=factors,
+            orientation="h",
+            marker=dict(
+                color=color,
+                line=dict(width=0)
+            )
+        )],
+        frames=frames
+    )
 
     fig.update_layout(
         height=420,
+        bargap=0.25,
+        bargroupgap=0.05,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#020617"),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=False)
+        xaxis=dict(showgrid=False, zeroline=False),
+        yaxis=dict(showgrid=False),
+        updatemenus=[]
     )
 
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= RECOMMENDATIONS =================
+    # ================= ADVICE =================
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
     st.subheader("Actionable Optimization Strategies")
 
     advice = {
         "Screen Exposure": "Introduce structured offline intervals and cap non-essential usage windows.",
         "Night Usage": "Enforce a digital sunset protocol to protect circadian rhythm stability.",
-        "Sleep Deficit": "Optimize sleep hygiene to restore executive function and resilience.",
-        "Visual Strain": "Apply controlled visual recovery cycles during extended sessions.",
+        "Sleep Deficit": "Optimize sleep hygiene to restore executive function.",
+        "Visual Strain": "Apply controlled visual recovery cycles.",
         "Context Switching": "Batch cognitively similar tasks to minimize attention fragmentation."
     }
 
-    for f, v in sorted(zip(factors, values), key=lambda x: x[1], reverse=True):
+    for f in factors:
         st.markdown(f"""
         <div class="advice-card">
             <div class="advice-title">{f}</div>
