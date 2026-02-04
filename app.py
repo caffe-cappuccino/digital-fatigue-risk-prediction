@@ -12,124 +12,79 @@ st.set_page_config(
 )
 
 # ================= LOAD MODEL =================
-model = None
-model_error = None
-try:
-    model = joblib.load("model/fatigue_model.pkl")
-except Exception as e:
-    model_error = str(e)
+model = joblib.load("model/fatigue_model.pkl")
 
-# ================= ADVANCED UI =================
+# ================= CLEAN PREMIUM UI =================
 st.markdown("""
 <style>
 
-/* ===== PARALLAX-LIKE BACKGROUND ===== */
+/* Global background */
 body {
-    background:
-        radial-gradient(circle at 20% 10%, #2a1f4d, transparent 40%),
-        radial-gradient(circle at 80% 30%, #1b2a4d, transparent 45%),
-        linear-gradient(180deg, #0c0c14, #141425);
-    background-attachment: fixed;
+    background-color: #f7f8fc;
 }
 
-/* Remove Streamlit defaults */
-section.main > div,
-.block-container,
-div[data-testid="stVerticalBlock"],
-div[data-testid="stHorizontalBlock"],
-div[data-testid="stMarkdownContainer"] {
-    background: transparent !important;
+/* Headings */
+h1 {
+    color: #2d2f7f;
+    font-weight: 700;
+}
+h2, h3 {
+    color: #2f2f2f;
 }
 
-/* ===== GLASS DEPTH VARIANTS ===== */
-.glass {
-    background: rgba(255,255,255,0.07);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-radius: 26px;
+/* Card */
+.card {
+    background: white;
     padding: 28px;
-    margin-bottom: 48px;
-    border: 1px solid rgba(255,255,255,0.12);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    border-radius: 18px;
+    box-shadow: 0px 12px 30px rgba(0,0,0,0.08);
+    margin-bottom: 36px;
 }
 
-.glass.deep {
-    background: rgba(255,255,255,0.10);
-    backdrop-filter: blur(18px);
-}
-
-/* ===== HOVER GLOW ===== */
-.glass:hover {
-    box-shadow:
-        0 0 22px rgba(160,140,255,0.35),
-        inset 0 0 20px rgba(255,255,255,0.04);
-    transform: translateY(-2px);
-}
-
-/* ===== TEXT ===== */
-h1 { color: #f3f1ff; font-weight: 700; }
-h2, h3 { color: #e6e4ff; }
-p, span, label { color: #d6d4ff !important; }
-
-/* ===== BUTTON ===== */
+/* Button */
 .stButton > button {
-    background: linear-gradient(90deg, #a18cd1, #fbc2eb);
-    color: #1a1a1a;
-    border-radius: 28px;
-    height: 3.2em;
+    background: linear-gradient(90deg, #6c63ff, #8f88ff);
+    color: white;
+    border-radius: 12px;
+    height: 3em;
     width: 100%;
     font-size: 16px;
     font-weight: 600;
     border: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 14px rgba(251,194,235,0.4);
-}
-.stButton > button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 26px rgba(161,140,209,0.75);
 }
 
-/* ===== ANIMATED PROGRESS ===== */
+/* Progress bar */
 .progress-wrapper {
-    background: rgba(255,255,255,0.18);
-    border-radius: 12px;
-    height: 14px;
+    background: #ecebff;
+    border-radius: 10px;
+    height: 12px;
     width: 100%;
     overflow: hidden;
     margin-top: 10px;
 }
-
 .progress-fill {
     height: 100%;
-    width: 0%;
-    border-radius: 12px;
-    background: linear-gradient(90deg, #a18cd1, #fbc2eb);
-    animation: fillBar 1.2s ease forwards;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #6c63ff, #8f88ff);
 }
 
-@keyframes fillBar {
-    from { width: 0%; }
-    to { width: var(--fill); }
+/* Section spacing */
+.section {
+    margin-bottom: 40px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
 # ================= HEADER =================
-st.title("🌸 Digital Fatigue Monitor")
+st.title("Digital Fatigue Monitor")
 st.write(
-    "A layered, depth-based interface to explore how digital habits "
-    "affect fatigue."
+    "A premium analytics interface to understand how your digital habits "
+    "impact cognitive and physical fatigue."
 )
 
-# ================= MODEL ERROR =================
-if model_error:
-    st.error("Model could not be loaded")
-    st.code(model_error)
-    st.stop()
-
 # ================= INPUT =================
-st.markdown("<div class='glass'>", unsafe_allow_html=True)
+st.markdown("<div class='card'>", unsafe_allow_html=True)
 st.subheader("Daily Usage Overview")
 
 c1, c2 = st.columns(2)
@@ -171,33 +126,40 @@ if predict:
     fatigue_pct = min(max(fatigue, 0), 100)
 
     # ================= RESULT =================
-    st.markdown("<div class='glass deep'>", unsafe_allow_html=True)
-    st.subheader("Fatigue Level")
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("Fatigue Score")
     st.write(f"**{fatigue_pct:.1f} / 100**")
 
     st.markdown(
         f"""
         <div class="progress-wrapper">
-            <div class="progress-fill" style="--fill:{fatigue_pct}%;"></div>
+            <div class="progress-fill" style="width:{fatigue_pct}%;"></div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
     if fatigue < 35:
-        st.success("Low fatigue detected.")
+        st.success("Low fatigue detected. Your habits appear well balanced.")
     elif fatigue < 65:
-        st.warning("Moderate fatigue detected.")
+        st.warning("Moderate fatigue detected. Small adjustments may help.")
     else:
-        st.error("High fatigue detected.")
+        st.error("High fatigue detected. Recovery is strongly recommended.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= LOLLIPOP =================
-    st.markdown("<div class='glass'>", unsafe_allow_html=True)
-    st.subheader("Main Contributors")
+    # ================= LOLLIPOP CHART =================
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("Key Contributors")
 
-    factors = ["Screen time", "Night usage", "Low sleep", "Eye strain", "Task switching"]
+    factors = [
+        "Screen time",
+        "Night usage",
+        "Low sleep",
+        "Eye strain",
+        "Task switching"
+    ]
+
     values = np.array([
         screen_time,
         night_usage,
@@ -208,23 +170,45 @@ if predict:
 
     y_pos = np.arange(len(factors))
 
-    fig, ax = plt.subplots(figsize=(5, 3.5))
-    fig.patch.set_alpha(0)
-    ax.set_facecolor("none")
-
-    ax.hlines(y=y_pos, xmin=0, xmax=values, color="#b8a9ff", linewidth=3)
-    ax.plot(values, y_pos, "o", color="#fbc2eb", markersize=8)
+    fig, ax = plt.subplots(figsize=(5.5, 3.8))
+    ax.hlines(y=y_pos, xmin=0, xmax=values, color="#c7c5ff", linewidth=4)
+    ax.plot(values, y_pos, "o", color="#6c63ff", markersize=8)
 
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(factors, color="#e6e4ff")
-    ax.set_xlabel("Relative impact", color="#e6e4ff")
-    ax.set_title("Fatigue contributors", color="#f3f1ff")
+    ax.set_yticklabels(factors)
+    ax.set_xlabel("Relative impact")
+    ax.set_title("Fatigue contribution by factor")
 
-    for spine in ax.spines.values():
-        spine.set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
 
     st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # ================= ADVICE =================
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("Actionable Suggestions")
+
+    tips = []
+    if screen_time > 8:
+        tips.append("Reduce total daily screen exposure.")
+    if night_usage > 2:
+        tips.append("Avoid screen use close to bedtime.")
+    if sleep < 6:
+        tips.append("Increase sleep duration for recovery.")
+    if eye_strain >= 4:
+        tips.append("Follow the 20–20–20 eye care rule.")
+    if task_switch > 30:
+        tips.append("Limit frequent task switching to reduce cognitive load.")
+
+    if tips:
+        for t in tips:
+            st.write("•", t)
+    else:
+        st.write("No major risk factors detected. Keep maintaining your routine.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
 # ================= FOOTER =================
-st.caption("Depth • Motion • Calm ✨")
+st.caption("Clean • Premium • Insightful")
