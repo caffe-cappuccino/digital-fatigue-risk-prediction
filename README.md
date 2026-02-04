@@ -1,0 +1,2 @@
+# digital-fatigue-risk-prediction
+A machine learning–based system to predict digital fatigue risk by analyzing screen usage patterns and behavioral indicators, enabling proactive digital well-being management.
