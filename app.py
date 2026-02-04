@@ -16,7 +16,8 @@ st.set_page_config(
 @st.cache_resource
 def load_model():
     try:
-        return joblib.load("model/fatigue_model.pkl"), None
+        model = joblib.load("model/fatigue_model.pkl")
+        return model, None
     except Exception as e:
         return None, str(e)
 
@@ -52,6 +53,12 @@ st.write(
     "and visually explains **why**."
 )
 
+# ================= MODEL ERROR =================
+if model_error:
+    st.error("Model failed to load")
+    st.code(model_error)
+    st.stop()
+
 # ================= INPUTS =================
 st.markdown("<div class='card'>", unsafe_allow_html=True)
 st.subheader("Usage Inputs")
@@ -72,16 +79,12 @@ predict = st.button("Predict Fatigue")
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= PREDICTION =================
-if model_error:
-    st.error("Model failed to load")
-    st.code(model_error)
-
-elif predict:
+if predict:
     input_df = pd.DataFrame([[
         screen_time,
         continuous_usage,
         night_usage,
-        4,  # fixed breaks (kept stable)
+        4,  # breaks_per_day kept fixed
         sleep,
         eye_strain,
         task_switch
@@ -95,14 +98,27 @@ elif predict:
         "task_switching_rate"
     ])
 
-    fatigue = float(model.predict(input_df)[0])
+    try:
+        raw_pred = model.predict(input_df)
 
+        # ✅ SAFEST POSSIBLE CAST
+        if isinstance(raw_pred, (list, np.ndarray)):
+            fatigue = float(np.array(raw_pred).reshape(-1)[0])
+        else:
+            fatigue = float(raw_pred)
+
+    except Exception as e:
+        st.error("Prediction failed")
+        st.code(str(e))
+        st.stop()
+
+    # ================= RESULT =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.metric("Fatigue Severity Score", f"{fatigue:.1f} / 100")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= 3D GRAPH 1: CONTRIBUTION =================
-    st.subheader("3D Contribution View (Compact)")
+    # ================= 3D CONTRIBUTION GRAPH =================
+    st.subheader("3D Contribution View")
 
     factors = ["Screen", "Night", "Low Sleep", "Eye", "Switching"]
     contrib = np.array([
@@ -117,14 +133,9 @@ elif predict:
     ax = fig.add_subplot(111, projection='3d')
 
     xs = np.arange(len(factors))
-    ys = np.zeros(len(factors))
-    zs = np.zeros(len(factors))
+    ax.bar3d(xs, np.zeros(len(xs)), np.zeros(len(xs)),
+             0.5, 0.5, contrib, shade=True)
 
-    dx = np.ones(len(factors)) * 0.5
-    dy = np.ones(len(factors)) * 0.5
-    dz = contrib
-
-    ax.bar3d(xs, ys, zs, dx, dy, dz, shade=True)
     ax.set_xticks(xs)
     ax.set_xticklabels(factors, rotation=20)
     ax.set_zlabel("Contribution (%)")
@@ -132,8 +143,8 @@ elif predict:
 
     st.pyplot(fig)
 
-    # ================= 3D GRAPH 2: FATIGUE LANDSCAPE =================
-    st.subheader("Fatigue Landscape (User Position)")
+    # ================= 3D LANDSCAPE =================
+    st.subheader("Fatigue Landscape")
 
     x = np.linspace(2, 14, 20)
     y = np.linspace(4, 9, 20)
@@ -142,7 +153,7 @@ elif predict:
 
     fig2 = plt.figure(figsize=(6,4))
     ax2 = fig2.add_subplot(111, projection='3d')
-    ax2.plot_surface(X, Y, Z, alpha=0.4)
+    ax2.plot_surface(X, Y, Z, alpha=0.35)
     ax2.scatter(screen_time, sleep, fatigue, color='red', s=50)
 
     ax2.set_xlabel("Screen Time")
