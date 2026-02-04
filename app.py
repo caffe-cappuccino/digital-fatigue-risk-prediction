@@ -7,8 +7,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
-    page_title="Digital Fatigue Predictor",
-    page_icon="🧠",
+    page_title="Digital Fatigue ✨",
+    page_icon="🌸",
     layout="centered"
 )
 
@@ -16,66 +16,83 @@ st.set_page_config(
 @st.cache_resource
 def load_model():
     try:
-        model = joblib.load("model/fatigue_model.pkl")
-        return model, None
+        return joblib.load("model/fatigue_model.pkl"), None
     except Exception as e:
         return None, str(e)
 
 model, model_error = load_model()
 
-# ================= BASIC CLEAN STYLE =================
+# ================= GEN-Z PASTEL STYLE =================
 st.markdown("""
 <style>
-body { background-color: #f7f8fc; }
-h1, h2, h3 { color: #2c3e50; }
+body {
+    background: linear-gradient(135deg, #fdfbfb, #ebedee);
+}
+h1 {
+    color: #5f5cff;
+    font-weight: 700;
+}
+h2, h3 {
+    color: #444;
+}
+p {
+    color: #555;
+}
 .card {
-    background: white;
-    padding: 18px;
-    border-radius: 14px;
-    box-shadow: 0px 6px 18px rgba(0,0,0,0.08);
-    margin-bottom: 20px;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 22px;
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.08);
+    margin-bottom: 22px;
 }
 .stButton > button {
-    background-color: #6C63FF;
-    color: white;
-    border-radius: 10px;
-    width: 100%;
+    background: linear-gradient(90deg, #ff9a9e, #fad0c4);
+    color: #222;
+    border-radius: 30px;
     height: 3em;
+    width: 100%;
     font-size: 16px;
+    font-weight: 600;
+    border: none;
+}
+.stButton > button:hover {
+    background: linear-gradient(90deg, #fbc2eb, #a6c1ee);
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ================= HEADER =================
-st.title("🧠 Digital Fatigue Prediction")
+st.title("🌸 Digital Fatigue Check")
 st.write(
-    "A clean, explainable ML system that predicts **how much digital fatigue may occur** "
-    "and visually explains **why**."
+    "hey bestie 👋  
+    let’s see how tired your **digital life** is making you 💻🧠  
+    no judgement, just vibes ✨"
 )
 
 # ================= MODEL ERROR =================
 if model_error:
-    st.error("Model failed to load")
+    st.error("oops 😭 something went wrong loading the brain")
     st.code(model_error)
     st.stop()
 
-# ================= INPUTS =================
+# ================= INPUT CARD =================
 st.markdown("<div class='card'>", unsafe_allow_html=True)
-st.subheader("Usage Inputs")
+st.subheader("🧩 tell me about your day")
 
 c1, c2 = st.columns(2)
 
 with c1:
-    screen_time = st.slider("Screen Time (hrs/day)", 1.0, 16.0, 6.0, 0.5)
-    night_usage = st.slider("Night Usage (hrs)", 0.0, 8.0, 1.5, 0.5)
-    sleep = st.slider("Sleep (hrs)", 3.0, 10.0, 7.0, 0.5)
+    screen_time = st.slider("📱 screen time (hrs)", 1.0, 16.0, 6.0, 0.5)
+    night_usage = st.slider("🌙 late night scrolling (hrs)", 0.0, 8.0, 1.5, 0.5)
+    sleep = st.slider("😴 sleep (hrs)", 3.0, 10.0, 7.0, 0.5)
 
 with c2:
-    continuous_usage = st.slider("Continuous Usage (mins)", 10, 300, 90, 10)
-    eye_strain = st.select_slider("Eye Strain", [1,2,3,4,5], 3)
-    task_switch = st.slider("Task Switching/hour", 1, 50, 18)
+    continuous_usage = st.slider("⏱ binge usage (mins)", 10, 300, 90, 10)
+    eye_strain = st.select_slider("👀 eye strain", [1,2,3,4,5], 3)
+    task_switch = st.slider("🔁 app switching", 1, 50, 18)
 
-predict = st.button("Predict Fatigue")
+predict = st.button("✨ check my fatigue")
+
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= PREDICTION =================
@@ -84,7 +101,7 @@ if predict:
         screen_time,
         continuous_usage,
         night_usage,
-        4,  # breaks_per_day kept fixed
+        4,
         sleep,
         eye_strain,
         task_switch
@@ -98,29 +115,29 @@ if predict:
         "task_switching_rate"
     ])
 
-    try:
-        raw_pred = model.predict(input_df)
+    raw_pred = model.predict(input_df)
+    fatigue = float(np.array(raw_pred).reshape(-1)[0])
 
-        # ✅ SAFEST POSSIBLE CAST
-        if isinstance(raw_pred, (list, np.ndarray)):
-            fatigue = float(np.array(raw_pred).reshape(-1)[0])
-        else:
-            fatigue = float(raw_pred)
-
-    except Exception as e:
-        st.error("Prediction failed")
-        st.code(str(e))
-        st.stop()
-
-    # ================= RESULT =================
+    # ================= RESULT CARD =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.metric("Fatigue Severity Score", f"{fatigue:.1f} / 100")
+    st.subheader("🧠 your fatigue score")
+
+    st.metric("fatigue level", f"{fatigue:.1f} / 100")
+
+    if fatigue < 35:
+        st.success("💖 you’re doing okay bestie, keep it up!")
+    elif fatigue < 65:
+        st.warning("💛 a little tired — maybe slow down today")
+    else:
+        st.error("💔 you’re exhausted, pls rest 😭")
+
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= 3D CONTRIBUTION GRAPH =================
-    st.subheader("3D Contribution View")
+    # ================= CUTE 3D CONTRIBUTION GRAPH =================
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("🎨 what’s draining you the most")
 
-    factors = ["Screen", "Night", "Low Sleep", "Eye", "Switching"]
+    factors = ["screen", "night", "sleep", "eyes", "switching"]
     contrib = np.array([
         screen_time / 16,
         night_usage / 8,
@@ -129,45 +146,44 @@ if predict:
         task_switch / 50
     ]) * 100
 
-    fig = plt.figure(figsize=(6,4))
+    fig = plt.figure(figsize=(5, 4))
     ax = fig.add_subplot(111, projection='3d')
-
     xs = np.arange(len(factors))
+
     ax.bar3d(xs, np.zeros(len(xs)), np.zeros(len(xs)),
-             0.5, 0.5, contrib, shade=True)
+             0.5, 0.5, contrib, color="#ffb6c1", shade=True)
 
     ax.set_xticks(xs)
     ax.set_xticklabels(factors, rotation=20)
-    ax.set_zlabel("Contribution (%)")
-    ax.set_title("Factor Contribution (3D)")
+    ax.set_zlabel("impact %")
+    ax.set_title("digital energy drain")
 
     st.pyplot(fig)
-
-    # ================= 3D LANDSCAPE =================
-    st.subheader("Fatigue Landscape")
-
-    x = np.linspace(2, 14, 20)
-    y = np.linspace(4, 9, 20)
-    X, Y = np.meshgrid(x, y)
-    Z = (X * 5) + ((10 - Y) * 8)
-
-    fig2 = plt.figure(figsize=(6,4))
-    ax2 = fig2.add_subplot(111, projection='3d')
-    ax2.plot_surface(X, Y, Z, alpha=0.35)
-    ax2.scatter(screen_time, sleep, fatigue, color='red', s=50)
-
-    ax2.set_xlabel("Screen Time")
-    ax2.set_ylabel("Sleep")
-    ax2.set_zlabel("Fatigue")
-    ax2.set_title("User Position in Fatigue Space")
-
-    st.pyplot(fig2)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # ================= ADVICE =================
-    st.subheader("Quick Advice")
-    if fatigue > 65:
-        st.warning("High fatigue risk: reduce screen time and improve sleep.")
-    elif fatigue > 35:
-        st.info("Moderate fatigue: balance usage and take regular breaks.")
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("🌱 gentle reminders")
+
+    tips = []
+    if screen_time > 8:
+        tips.append("📱 log off a little earlier today")
+    if night_usage > 2:
+        tips.append("🌙 doomscrolling isn’t self-care bestie")
+    if sleep < 6:
+        tips.append("😴 pls sleep, everything feels worse when tired")
+    if eye_strain >= 4:
+        tips.append("👀 blink. hydrate. look outside.")
+    if task_switch > 30:
+        tips.append("🧠 do one thing at a time, it’s okay")
+
+    if tips:
+        for t in tips:
+            st.write("•", t)
     else:
-        st.success("Low fatigue: current habits are healthy.")
+        st.write("✨ honestly? you’re balanced rn, proud of you")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ================= FOOTER =================
+st.caption("made with 💖, vibes & a tiny bit of ML ✨")
