@@ -16,54 +16,37 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0px); }
-}
-
 body {
-    background:
-        radial-gradient(circle at 15% 20%, #e0e7ff, transparent 40%),
-        radial-gradient(circle at 85% 30%, #fce7f3, transparent 45%),
-        linear-gradient(135deg, #f8fafc, #f1f5f9);
+    background: #F8FAFC;
     color: #020617;
 }
 
 h1 {
     font-weight: 900;
-    letter-spacing: -1.4px;
+    letter-spacing: -1.2px;
 }
 
 .subtitle {
-    color: #475569;
-    margin-top: -12px;
+    color: #64748B;
+    margin-top: -10px;
     font-size: 15px;
 }
 
-/* ---------- GLASS ---------- */
-.glass {
-    background: rgba(255,255,255,0.75);
-    backdrop-filter: blur(14px);
-    padding: 36px;
-    border-radius: 24px;
-    border: 1px solid rgba(255,255,255,0.4);
-    box-shadow: 0 30px 60px rgba(15,23,42,0.08);
-    animation: fadeUp 0.6s ease;
+/* ---------- CARDS ---------- */
+.card {
+    background: #FFFFFF;
+    padding: 32px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(2,6,23,0.08);
     margin-bottom: 36px;
 }
 
 /* ---------- CONTROL PANEL ---------- */
 .control-panel {
-    background: linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.68));
-    border-radius: 28px;
-    padding: 38px 42px;
-    box-shadow: 0 45px 90px rgba(15,23,42,0.1);
+    background: #FFFFFF;
+    padding: 36px;
+    border-radius: 24px;
+    box-shadow: 0 25px 60px rgba(2,6,23,0.1);
     margin-bottom: 42px;
 }
 
@@ -72,73 +55,65 @@ h1 {
 }
 
 .panel-subtitle {
-    color: #64748b;
+    color: #64748B;
     font-size: 14px;
-    margin-bottom: 30px;
+    margin-bottom: 28px;
 }
 
 /* ---------- INPUT GROUP ---------- */
 .input-group {
-    background: rgba(255,255,255,0.7);
-    border-radius: 22px;
-    padding: 26px;
-    box-shadow: 0 18px 38px rgba(15,23,42,0.06);
-    transition: all 0.25s ease;
-}
-
-.input-group:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 28px 60px rgba(15,23,42,0.12);
+    background: #F1F5F9;
+    padding: 24px;
+    border-radius: 18px;
 }
 
 .group-title {
-    font-weight: 700;
     font-size: 13px;
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
+    color: #020617;
 }
 
 /* ---------- METRICS ---------- */
 .metric {
-    font-size: 46px;
+    font-size: 44px;
     font-weight: 900;
 }
 
 .metric-label {
-    color: #64748b;
     font-size: 13px;
+    color: #64748B;
 }
 
 /* ---------- BUTTON ---------- */
 .stButton > button {
-    background: linear-gradient(135deg, #4f46e5, #db2777);
+    background: #1E40AF;
     color: white;
-    border-radius: 18px;
-    height: 3.5em;
-    font-size: 16px;
     font-weight: 700;
+    height: 3.4em;
+    border-radius: 14px;
     border: none;
-    box-shadow: 0 16px 36px rgba(79,70,229,0.4);
 }
 
 .stButton > button:hover {
-    transform: translateY(-2px);
+    background: #1D4ED8;
 }
 
 /* ---------- ADVICE ---------- */
 .advice-card {
-    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 20px 45px rgba(15,23,42,0.1);
-    border-left: 5px solid #6366f1;
-    animation: float 7s ease-in-out infinite;
-    margin-bottom: 20px;
+    background: #FFFFFF;
+    border-left: 5px solid #0EA5E9;
+    padding: 22px 26px;
+    border-radius: 16px;
+    box-shadow: 0 16px 30px rgba(2,6,23,0.08);
+    margin-bottom: 18px;
 }
 
 .advice-title {
     font-weight: 700;
+    margin-bottom: 6px;
 }
 
 .advice-text {
@@ -166,7 +141,7 @@ FEATURES = [
     "task_switching_rate"
 ]
 
-# ================= TRAIN MODEL =================
+# ================= MODEL =================
 @st.cache_resource
 def train_model(data):
     X = data[FEATURES]
@@ -190,14 +165,12 @@ model, avg_fatigue = train_model(df)
 
 # ================= HEADER =================
 st.markdown("<h1>Digital Fatigue Intelligence</h1>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Behavioral analytics engine for cognitive load</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Behavioral analytics for cognitive load and burnout risk</div>", unsafe_allow_html=True)
 
 # ================= INPUT =================
-st.markdown("""
-<div class="control-panel">
-    <div class="panel-title">Behavioral Parameters</div>
-    <div class="panel-subtitle">Tune variables to simulate fatigue impact</div>
-""", unsafe_allow_html=True)
+st.markdown("<div class='control-panel'>", unsafe_allow_html=True)
+st.markdown("<div class='panel-title'>Behavioral Parameters</div>", unsafe_allow_html=True)
+st.markdown("<div class='panel-subtitle'>Tune variables to simulate fatigue impact</div>", unsafe_allow_html=True)
 
 c1, c2, c3 = st.columns(3)
 
@@ -224,81 +197,62 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= RUN =================
 if run:
-    st.markdown("<div class='glass'>", unsafe_allow_html=True)
-
     user_df = pd.DataFrame([[screen, cont, night, 4, sleep, eye, switch]], columns=FEATURES)
     fatigue = float(model.predict(user_df)[0])
     fatigue = np.clip(fatigue, 0, 100)
 
-    color = "#22c55e" if fatigue < 40 else "#f59e0b" if fatigue < 70 else "#ef4444"
+    color = "#16A34A" if fatigue < 40 else "#D97706" if fatigue < 70 else "#DC2626"
 
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     c1.markdown(f"<div class='metric' style='color:{color}'>{fatigue:.1f}</div><div class='metric-label'>Fatigue Score</div>", unsafe_allow_html=True)
-    c2.markdown(f"<div class='metric'>{avg_fatigue:.1f}</div><div class='metric-label'>Baseline</div>", unsafe_allow_html=True)
+    c2.markdown(f"<div class='metric'>{avg_fatigue:.1f}</div><div class='metric-label'>Population Baseline</div>", unsafe_allow_html=True)
     c3.markdown(f"<div class='metric'>{fatigue-avg_fatigue:+.1f}</div><div class='metric-label'>Deviation</div>", unsafe_allow_html=True)
-
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= ANIMATED GRAPH =================
-    st.markdown("<div class='glass'>", unsafe_allow_html=True)
+    # ================= REAL ANIMATION =================
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("Primary Fatigue Contributors")
 
     factors = ["Screen Exposure", "Night Usage", "Sleep Deficit", "Visual Strain", "Context Switching"]
-    values = [screen, night, 10-sleep, eye, switch]
+    target = np.array([screen, night, 10-sleep, eye, switch])
 
-    frames = [
-        go.Frame(
-            data=[go.Bar(
-                x=[v * i / 20 for v in values],
-                y=factors,
-                orientation="h",
-                marker=dict(
-                    color=color,
-                    line=dict(width=0)
-                )
-            )]
-        )
-        for i in range(1, 21)
-    ]
+    placeholder = st.empty()
 
-    fig = go.Figure(
-        data=[go.Bar(
-            x=[0]*len(values),
+    for step in range(1, 21):
+        values = target * (step / 20)
+
+        fig = go.Figure(go.Bar(
+            x=values,
             y=factors,
             orientation="h",
-            marker=dict(
-                color=color,
-                line=dict(width=0)
-            )
-        )],
-        frames=frames
-    )
+            marker=dict(color="#1E40AF"),
+        ))
 
-    fig.update_layout(
-        height=420,
-        bargap=0.25,
-        bargroupgap=0.05,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#020617"),
-        xaxis=dict(showgrid=False, zeroline=False),
-        yaxis=dict(showgrid=False),
-        updatemenus=[]
-    )
+        fig.update_layout(
+            height=420,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=False),
+            bargap=0.3
+        )
 
-    st.plotly_chart(fig, use_container_width=True)
+        placeholder.plotly_chart(fig, use_container_width=True)
+        time.sleep(0.03)
+
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ================= ADVICE =================
-    st.markdown("<div class='glass'>", unsafe_allow_html=True)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("Actionable Optimization Strategies")
 
     advice = {
         "Screen Exposure": "Introduce structured offline intervals and cap non-essential usage windows.",
-        "Night Usage": "Enforce a digital sunset protocol to protect circadian rhythm stability.",
+        "Night Usage": "Implement a digital sunset to protect circadian rhythm stability.",
         "Sleep Deficit": "Optimize sleep hygiene to restore executive function.",
-        "Visual Strain": "Apply controlled visual recovery cycles.",
-        "Context Switching": "Batch cognitively similar tasks to minimize attention fragmentation."
+        "Visual Strain": "Apply controlled visual recovery cycles during extended sessions.",
+        "Context Switching": "Batch cognitively similar tasks to reduce attention fragmentation."
     }
 
     for f in factors:
