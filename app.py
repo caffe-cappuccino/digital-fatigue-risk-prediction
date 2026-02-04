@@ -19,16 +19,20 @@ try:
 except Exception as e:
     model_error = str(e)
 
-# ================= GLASSMORPHIC UI =================
+# ================= ADVANCED UI =================
 st.markdown("""
 <style>
 
-/* ===== BACKGROUND ===== */
+/* ===== PARALLAX-LIKE BACKGROUND ===== */
 body {
-    background: radial-gradient(circle at top, #1b1b2f, #0d0d14);
+    background:
+        radial-gradient(circle at 20% 10%, #2a1f4d, transparent 40%),
+        radial-gradient(circle at 80% 30%, #1b2a4d, transparent 45%),
+        linear-gradient(180deg, #0c0c14, #141425);
+    background-attachment: fixed;
 }
 
-/* ===== REMOVE STREAMLIT WHITE ===== */
+/* Remove Streamlit defaults */
 section.main > div,
 .block-container,
 div[data-testid="stVerticalBlock"],
@@ -37,92 +41,75 @@ div[data-testid="stMarkdownContainer"] {
     background: transparent !important;
 }
 
-/* ===== GLASS PANEL ===== */
+/* ===== GLASS DEPTH VARIANTS ===== */
 .glass {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border-radius: 26px;
     padding: 28px;
     margin-bottom: 48px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255,255,255,0.12);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.glass.deep {
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(18px);
+}
+
+/* ===== HOVER GLOW ===== */
+.glass:hover {
     box-shadow:
-        0 0 25px rgba(160, 140, 255, 0.15),
-        inset 0 0 20px rgba(255, 255, 255, 0.03);
+        0 0 22px rgba(160,140,255,0.35),
+        inset 0 0 20px rgba(255,255,255,0.04);
+    transform: translateY(-2px);
 }
 
-/* ===== HEADERS ===== */
-h1 {
-    color: #f6f4ff;
-    font-weight: 700;
-}
-h2, h3 {
-    color: #e4e1ff;
-}
-p, label, span {
-    color: #d4d1ff !important;
-}
+/* ===== TEXT ===== */
+h1 { color: #f3f1ff; font-weight: 700; }
+h2, h3 { color: #e6e4ff; }
+p, span, label { color: #d6d4ff !important; }
 
-/* ===== NEON BUTTON ===== */
+/* ===== BUTTON ===== */
 .stButton > button {
     background: linear-gradient(90deg, #a18cd1, #fbc2eb);
     color: #1a1a1a;
-    border-radius: 30px;
-    height: 3.3em;
+    border-radius: 28px;
+    height: 3.2em;
     width: 100%;
     font-size: 16px;
     font-weight: 600;
     border: none;
     transition: all 0.3s ease;
-    box-shadow: 0 0 15px rgba(251,194,235,0.35);
+    box-shadow: 0 0 14px rgba(251,194,235,0.4);
 }
 .stButton > button:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 28px rgba(161,140,209,0.7);
+    box-shadow: 0 0 26px rgba(161,140,209,0.75);
 }
 
-/* ===== iOS STYLE SLIDERS ===== */
-input[type="range"] {
-    -webkit-appearance: none;
-    height: 6px;
-    border-radius: 6px;
-    background: linear-gradient(90deg, #a18cd1, #fbc2eb);
-}
-
-input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 0 12px rgba(161,140,209,0.8);
-    cursor: pointer;
-}
-
-input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 0 12px rgba(161,140,209,0.8);
-    cursor: pointer;
-}
-
-/* ===== PROGRESS BAR ===== */
+/* ===== ANIMATED PROGRESS ===== */
 .progress-wrapper {
-    background: rgba(255,255,255,0.15);
-    border-radius: 14px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 12px;
     height: 14px;
     width: 100%;
     overflow: hidden;
-    margin-top: 8px;
+    margin-top: 10px;
 }
+
 .progress-fill {
     height: 100%;
-    border-radius: 14px;
+    width: 0%;
+    border-radius: 12px;
     background: linear-gradient(90deg, #a18cd1, #fbc2eb);
-    box-shadow: 0 0 12px rgba(251,194,235,0.6);
+    animation: fillBar 1.2s ease forwards;
+}
+
+@keyframes fillBar {
+    from { width: 0%; }
+    to { width: var(--fill); }
 }
 
 </style>
@@ -131,7 +118,8 @@ input[type="range"]::-moz-range-thumb {
 # ================= HEADER =================
 st.title("🌸 Digital Fatigue Monitor")
 st.write(
-    "A glass-style interface to visualize how digital habits impact fatigue."
+    "A layered, depth-based interface to explore how digital habits "
+    "affect fatigue."
 )
 
 # ================= MODEL ERROR =================
@@ -183,14 +171,14 @@ if predict:
     fatigue_pct = min(max(fatigue, 0), 100)
 
     # ================= RESULT =================
-    st.markdown("<div class='glass'>", unsafe_allow_html=True)
+    st.markdown("<div class='glass deep'>", unsafe_allow_html=True)
     st.subheader("Fatigue Level")
     st.write(f"**{fatigue_pct:.1f} / 100**")
 
     st.markdown(
         f"""
         <div class="progress-wrapper">
-            <div class="progress-fill" style="width:{fatigue_pct}%;"></div>
+            <div class="progress-fill" style="--fill:{fatigue_pct}%;"></div>
         </div>
         """,
         unsafe_allow_html=True
@@ -230,7 +218,7 @@ if predict:
     ax.set_yticks(y_pos)
     ax.set_yticklabels(factors, color="#e6e4ff")
     ax.set_xlabel("Relative impact", color="#e6e4ff")
-    ax.set_title("Fatigue contributors", color="#f6f4ff")
+    ax.set_title("Fatigue contributors", color="#f3f1ff")
 
     for spine in ax.spines.values():
         spine.set_visible(False)
@@ -239,4 +227,4 @@ if predict:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= FOOTER =================
-st.caption("Glass • Neon • Calm ✨")
+st.caption("Depth • Motion • Calm ✨")
