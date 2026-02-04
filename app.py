@@ -16,7 +16,11 @@ st.set_page_config(
 @st.cache_resource
 def load_model():
     try:
-        return joblib.load("model/fatigue_model.pkl"), None
+        obj = joblib.load("model/fatigue_model.pkl")
+        # hard validation
+        if not hasattr(obj, "predict"):
+            return None, "Loaded object is not a valid ML model."
+        return obj, None
     except Exception as e:
         return None, str(e)
 
@@ -55,9 +59,6 @@ p {
     font-weight: 600;
     border: none;
 }
-.stButton > button:hover {
-    background: linear-gradient(90deg, #fbc2eb, #a6c1ee);
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -65,13 +66,13 @@ p {
 st.title("🌸 Digital Fatigue Monitor")
 st.write(
     "A calm, minimal interface to understand how daily digital habits "
-    "impact mental and physical fatigue."
+    "impact fatigue."
 )
 
-# ================= MODEL ERROR =================
+# ================= MODEL STATUS =================
 if model_error:
-    st.error("Model could not be loaded.")
-    st.code(model_error)
+    st.error("Model is not ready")
+    st.write(model_error)
     st.stop()
 
 # ================= INPUT CARD =================
@@ -91,31 +92,32 @@ with c2:
     task_switch = st.slider("Task switching frequency", 1, 50, 18)
 
 predict = st.button("Analyze Fatigue")
-
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= PREDICTION =================
 if predict:
-    input_df = pd.DataFrame([[
-        screen_time,
-        continuous_usage,
-        night_usage,
-        4,  # breaks_per_day fixed
-        sleep,
-        eye_strain,
-        task_switch
-    ]], columns=[
-        "screen_time_hours",
-        "continuous_usage_minutes",
-        "night_usage_hours",
-        "breaks_per_day",
-        "sleep_hours",
-        "eye_strain_level",
-        "task_switching_rate"
-    ])
 
-    raw_pred = model.predict(input_df)
-    fatigue = float(np.array(raw_pred).reshape(-1)[0])
+    # Build input safely
+    input_df = pd.DataFrame([{
+        "screen_time_hours": screen_time,
+        "continuous_usage_minutes": continuous_usage,
+        "night_usage_hours": night_usage,
+        "breaks_per_day": 4,
+        "sleep_hours": sleep,
+        "eye_strain_level": eye_strain,
+        "task_switching_rate": task_switch
+    }])
+
+    try:
+        pred = model.predict(input_df)
+
+        # universal safe cast
+        fatigue = float(np.asarray(pred).reshape(-1)[0])
+
+    except Exception as e:
+        st.error("Prediction failed safely")
+        st.write(e)
+        st.stop()
 
     # ================= RESULT =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
@@ -123,19 +125,19 @@ if predict:
     st.metric("Predicted fatigue level", f"{fatigue:.1f} / 100")
 
     if fatigue < 35:
-        st.success("Low fatigue detected. Current habits appear balanced.")
+        st.success("Low fatigue detected. Habits look balanced.")
     elif fatigue < 65:
-        st.warning("Moderate fatigue detected. Some adjustment may help.")
+        st.warning("Moderate fatigue detected. Minor adjustments may help.")
     else:
-        st.error("High fatigue detected. Rest and recovery are recommended.")
+        st.error("High fatigue detected. Rest is strongly recommended.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= SMALL 3D CONTRIBUTION GRAPH =================
+    # ================= SMALL 3D GRAPH =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("Key Contributing Factors")
 
-    factors = ["Screen", "Night Use", "Low Sleep", "Eye Strain", "Switching"]
+    factors = ["Screen", "Night", "Low Sleep", "Eye Strain", "Switching"]
     contrib = np.array([
         screen_time / 16,
         night_usage / 8,
@@ -174,7 +176,7 @@ if predict:
     if eye_strain >= 4:
         tips.append("Take regular visual breaks during screen use.")
     if task_switch > 30:
-        tips.append("Reduce frequent task switching to lower mental load.")
+        tips.append("Reduce frequent task switching.")
 
     if tips:
         for t in tips:
@@ -185,4 +187,4 @@ if predict:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= FOOTER =================
-st.caption("Designed with a calm, minimal aesthetic ✨")
+st.caption("Minimal • Calm • Aesthetic ✨")
