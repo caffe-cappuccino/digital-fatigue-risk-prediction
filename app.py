@@ -3,110 +3,85 @@ import joblib
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+from mpl_toolkits.mplot3d import Axes3D
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
-    page_title="Digital Fatigue Intelligence Dashboard",
+    page_title="Digital Fatigue Predictor",
     page_icon="🧠",
-    layout="wide"
+    layout="centered"
 )
 
-# ================= SAFE MODEL LOADER =================
+# ================= SAFE MODEL LOAD =================
 @st.cache_resource
-def load_model_safe(path):
+def load_model():
     try:
-        return joblib.load(path), None
+        return joblib.load("model/fatigue_model.pkl"), None
     except Exception as e:
         return None, str(e)
 
-model, model_error = load_model_safe("model/fatigue_model.pkl")
+model, model_error = load_model()
 
-# ================= GLOBAL STYLE =================
+# ================= BASIC CLEAN STYLE =================
 st.markdown("""
 <style>
-body {
-    background-color: #0f1222;
-}
-h1, h2, h3, h4 {
-    color: #ffffff;
-}
-p, span, div {
-    color: #dcdcdc;
-}
-.section {
-    background: linear-gradient(145deg, #1a1f3c, #11142a);
-    padding: 25px;
-    border-radius: 18px;
-    margin-bottom: 25px;
-    box-shadow: 0px 10px 30px rgba(0,0,0,0.4);
+body { background-color: #f7f8fc; }
+h1, h2, h3 { color: #2c3e50; }
+.card {
+    background: white;
+    padding: 18px;
+    border-radius: 14px;
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
 }
 .stButton > button {
-    background: linear-gradient(90deg, #7f7cff, #5a54e8);
+    background-color: #6C63FF;
     color: white;
-    border-radius: 16px;
-    height: 3.2em;
+    border-radius: 10px;
     width: 100%;
-    font-size: 18px;
-    border: none;
-}
-.stProgress > div > div {
-    background: linear-gradient(90deg, #7f7cff, #ff6584);
+    height: 3em;
+    font-size: 16px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ================= HEADER =================
-st.title("🧠 Digital Fatigue Intelligence Dashboard")
-st.markdown(
-    "### Predict • Explain • Act  \n"
-    "An **ML-powered decision-support system** for analyzing digital fatigue."
+st.title("🧠 Digital Fatigue Prediction")
+st.write(
+    "A clean, explainable ML system that predicts **how much digital fatigue may occur** "
+    "and visually explains **why**."
 )
 
-# ================= MODEL STATUS =================
-if model_error:
-    st.error("🚨 Model failed to load")
-    st.code(model_error)
-    st.info(
-        "The UI is loaded safely, but predictions are disabled because the "
-        "model file is corrupted or incomplete.\n\n"
-        "**No changes to train.py were made.**\n"
-        "Once a valid model file exists, predictions will automatically work."
-    )
+# ================= INPUTS =================
+st.markdown("<div class='card'>", unsafe_allow_html=True)
+st.subheader("Usage Inputs")
 
-st.markdown("---")
-
-# ================= INPUT PANEL =================
-st.markdown("<div class='section'>", unsafe_allow_html=True)
-st.subheader("📥 Behavioral Usage Inputs")
-
-c1, c2, c3 = st.columns(3)
+c1, c2 = st.columns(2)
 
 with c1:
-    screen_time = st.slider("📱 Screen Time (hrs/day)", 1.0, 16.0, 6.5, 0.5)
-    night_usage = st.slider("🌙 Night Usage (hrs)", 0.0, 8.0, 1.5, 0.5)
+    screen_time = st.slider("Screen Time (hrs/day)", 1.0, 16.0, 6.0, 0.5)
+    night_usage = st.slider("Night Usage (hrs)", 0.0, 8.0, 1.5, 0.5)
+    sleep = st.slider("Sleep (hrs)", 3.0, 10.0, 7.0, 0.5)
 
 with c2:
-    continuous_usage = st.slider("⏱ Continuous Usage (mins)", 10, 300, 90, 10)
-    breaks = st.slider("☕ Breaks / Day", 0, 15, 4)
+    continuous_usage = st.slider("Continuous Usage (mins)", 10, 300, 90, 10)
+    eye_strain = st.select_slider("Eye Strain", [1,2,3,4,5], 3)
+    task_switch = st.slider("Task Switching/hour", 1, 50, 18)
 
-with c3:
-    sleep = st.slider("😴 Sleep (hrs)", 3.0, 10.0, 7.0, 0.5)
-    eye_strain = st.select_slider("👁 Eye Strain", [1, 2, 3, 4, 5], 3)
-
-task_switch = st.slider("🔁 Task Switching Rate (per hour)", 1, 50, 18)
-
-predict = st.button("🚀 Analyze Digital Fatigue", disabled=model is None)
-
+predict = st.button("Predict Fatigue")
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= PREDICTION =================
-if predict and model is not None:
+if model_error:
+    st.error("Model failed to load")
+    st.code(model_error)
+
+elif predict:
     input_df = pd.DataFrame([[
         screen_time,
         continuous_usage,
         night_usage,
-        breaks,
+        4,  # fixed breaks (kept stable)
         sleep,
         eye_strain,
         task_switch
@@ -120,68 +95,68 @@ if predict and model is not None:
         "task_switching_rate"
     ])
 
-    fatigue_score = float(model.predict(input_df)[0])
+    fatigue = float(model.predict(input_df)[0])
 
-    if fatigue_score < 35:
-        risk, color = "LOW", "#4CAF50"
-    elif fatigue_score < 65:
-        risk, color = "MODERATE", "#FFC107"
-    else:
-        risk, color = "HIGH", "#FF5252"
-
-    # ================= GAUGE =================
-    st.markdown("<div class='section'>", unsafe_allow_html=True)
-    st.subheader("🎯 Fatigue Severity Gauge")
-
-    fig, ax = plt.subplots(figsize=(6, 3))
-    ax.barh([0], [fatigue_score], color=color)
-    ax.barh([0], [100 - fatigue_score], left=fatigue_score, color="#2a2f5a")
-    ax.set_xlim(0, 100)
-    ax.set_yticks([])
-    ax.set_title(f"Predicted Fatigue Level: {risk}", color="white")
-    ax.spines[:].set_visible(False)
-
-    st.pyplot(fig)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.metric("Fatigue Severity Score", f"{fatigue:.1f} / 100")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= RADAR =================
-    st.markdown("<div class='section'>", unsafe_allow_html=True)
-    st.subheader("🧬 Factor Contribution Radar")
+    # ================= 3D GRAPH 1: CONTRIBUTION =================
+    st.subheader("3D Contribution View (Compact)")
 
-    labels = [
-        "Screen Time",
-        "Continuous Usage",
-        "Night Usage",
-        "Low Sleep",
-        "Eye Strain",
-        "Task Switching"
-    ]
-
-    values = [
+    factors = ["Screen", "Night", "Low Sleep", "Eye", "Switching"]
+    contrib = np.array([
         screen_time / 16,
-        continuous_usage / 300,
         night_usage / 8,
         (10 - sleep) / 10,
         eye_strain / 5,
         task_switch / 50
-    ]
+    ]) * 100
 
-    values += values[:1]
-    angles = np.linspace(0, 2 * np.pi, len(values))
+    fig = plt.figure(figsize=(6,4))
+    ax = fig.add_subplot(111, projection='3d')
 
-    fig = plt.figure(figsize=(6, 6))
-    ax = plt.subplot(111, polar=True)
-    ax.plot(angles, values, color="#7f7cff", linewidth=3)
-    ax.fill(angles, values, color="#7f7cff", alpha=0.25)
-    ax.set_yticklabels([])
-    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
-    ax.set_title("Relative Fatigue Contribution", color="white")
+    xs = np.arange(len(factors))
+    ys = np.zeros(len(factors))
+    zs = np.zeros(len(factors))
+
+    dx = np.ones(len(factors)) * 0.5
+    dy = np.ones(len(factors)) * 0.5
+    dz = contrib
+
+    ax.bar3d(xs, ys, zs, dx, dy, dz, shade=True)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(factors, rotation=20)
+    ax.set_zlabel("Contribution (%)")
+    ax.set_title("Factor Contribution (3D)")
 
     st.pyplot(fig)
-    st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= FOOTER =================
-st.markdown("---")
-st.caption(
-    "⚠️ This system provides **decision-support insights** only and is not a medical diagnostic tool."
-)
+    # ================= 3D GRAPH 2: FATIGUE LANDSCAPE =================
+    st.subheader("Fatigue Landscape (User Position)")
+
+    x = np.linspace(2, 14, 20)
+    y = np.linspace(4, 9, 20)
+    X, Y = np.meshgrid(x, y)
+    Z = (X * 5) + ((10 - Y) * 8)
+
+    fig2 = plt.figure(figsize=(6,4))
+    ax2 = fig2.add_subplot(111, projection='3d')
+    ax2.plot_surface(X, Y, Z, alpha=0.4)
+    ax2.scatter(screen_time, sleep, fatigue, color='red', s=50)
+
+    ax2.set_xlabel("Screen Time")
+    ax2.set_ylabel("Sleep")
+    ax2.set_zlabel("Fatigue")
+    ax2.set_title("User Position in Fatigue Space")
+
+    st.pyplot(fig2)
+
+    # ================= ADVICE =================
+    st.subheader("Quick Advice")
+    if fatigue > 65:
+        st.warning("High fatigue risk: reduce screen time and improve sleep.")
+    elif fatigue > 35:
+        st.info("Moderate fatigue: balance usage and take regular breaks.")
+    else:
+        st.success("Low fatigue: current habits are healthy.")
