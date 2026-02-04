@@ -11,38 +11,78 @@ st.set_page_config(
     layout="centered"
 )
 
-# ================= LOAD MODEL (SIMPLE & STABLE) =================
+# ================= LOAD MODEL (UNCHANGED) =================
 model = joblib.load("model/fatigue_model.pkl")
 
-# ================= SOFT AESTHETIC UI =================
+# ================= AESTHETIC UI (POLISHED) =================
 st.markdown("""
 <style>
 body {
     background: linear-gradient(135deg, #fdfbfb, #ebedee);
 }
+
 h1 {
     color: #6c63ff;
     font-weight: 700;
 }
+
 h2, h3 {
     color: #444;
 }
+
 .card {
     background: white;
-    padding: 22px;
+    padding: 24px;
     border-radius: 22px;
-    box-shadow: 0px 8px 20px rgba(0,0,0,0.08);
-    margin-bottom: 24px;
+    box-shadow: 0px 10px 24px rgba(0,0,0,0.08);
+    margin-bottom: 26px;
 }
+
+/* 🌸 Button hover animation */
 .stButton > button {
     background: linear-gradient(90deg, #a18cd1, #fbc2eb);
     color: #222;
     border-radius: 30px;
-    height: 3em;
+    height: 3.2em;
     width: 100%;
     font-size: 16px;
     font-weight: 600;
     border: none;
+    transition: all 0.25s ease;
+}
+
+.stButton > button:hover {
+    transform: scale(1.03);
+    box-shadow: 0px 8px 20px rgba(161, 140, 209, 0.45);
+}
+
+/* 🌈 Gradient divider */
+.divider {
+    height: 2px;
+    border-radius: 4px;
+    background: linear-gradient(
+        90deg,
+        rgba(161,140,209,0),
+        rgba(161,140,209,0.9),
+        rgba(251,194,235,0.9),
+        rgba(161,140,209,0)
+    );
+    margin: 18px 0 26px 0;
+}
+
+/* 🌸 Pastel progress bar */
+.progress-wrapper {
+    background: #f2f1ff;
+    border-radius: 12px;
+    height: 14px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #a18cd1, #fbc2eb);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -53,6 +93,8 @@ st.write(
     "A calm, minimal interface to understand how daily digital habits "
     "affect fatigue levels."
 )
+
+st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
 # ================= INPUT CARD =================
 st.markdown("<div class='card'>", unsafe_allow_html=True)
@@ -86,7 +128,7 @@ if predict:
         screen_time,
         continuous_usage,
         night_usage,
-        4,  # breaks_per_day (fixed)
+        4,  # breaks_per_day
         sleep,
         eye_strain,
         task_switch
@@ -101,11 +143,23 @@ if predict:
     ])
 
     fatigue = model.predict(input_df)[0]
+    fatigue_pct = min(max(fatigue, 0), 100)
 
     # ================= RESULT CARD =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Fatigue Score")
-    st.metric("Predicted fatigue level", f"{fatigue:.1f} / 100")
+    st.subheader("Fatigue Level")
+
+    st.write(f"**{fatigue_pct:.1f} / 100**")
+
+    # 🌸 Pastel progress bar
+    st.markdown(
+        f"""
+        <div class="progress-wrapper">
+            <div class="progress-fill" style="width:{fatigue_pct}%;"></div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     if fatigue < 35:
         st.success("Low fatigue detected. Your habits look balanced.")
@@ -115,6 +169,8 @@ if predict:
         st.error("High fatigue detected. Rest and recovery are recommended.")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # ================= LOLLIPOP CHART =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
@@ -165,6 +221,8 @@ if predict:
 
     st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # ================= ADVICE CARD =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
