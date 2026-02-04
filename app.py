@@ -11,10 +11,10 @@ st.set_page_config(
     layout="centered"
 )
 
-# ================= LOAD MODEL (SIMPLE, AS BEFORE) =================
+# ================= LOAD MODEL (UNCHANGED) =================
 model = joblib.load("model/fatigue_model.pkl")
 
-# ================= PASTEL UI (ONLY COSMETIC) =================
+# ================= SOFT PASTEL UI =================
 st.markdown("""
 <style>
 body {
@@ -74,7 +74,7 @@ predict = st.button("Analyze Fatigue")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ================= PREDICTION (UNCHANGED LOGIC) =================
+# ================= PREDICTION (UNCHANGED) =================
 if predict:
     input_df = pd.DataFrame([[
         screen_time,
@@ -102,32 +102,79 @@ if predict:
     st.metric("Predicted fatigue level", f"{fatigue:.1f} / 100")
 
     if fatigue < 35:
-        st.success("Low fatigue detected. Habits look balanced.")
+        level = "Low"
+        color = "#b5ead7"
     elif fatigue < 65:
-        st.warning("Moderate fatigue detected. Some adjustments may help.")
+        level = "Moderate"
+        color = "#fff1ac"
     else:
-        st.error("High fatigue detected. Rest is recommended.")
+        level = "High"
+        color = "#ffb7b2"
 
+    st.write(f"**Fatigue category:** {level}")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ================= SIMPLE, SMALL GRAPH =================
+    # ================= LOLLIPOP CHART =================
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("Key Contributors")
+    st.subheader("What contributes the most")
 
-    factors = ["Screen Time", "Night Usage", "Low Sleep", "Eye Strain", "Task Switching"]
-    values = [
+    factors = [
+        "Screen time",
+        "Night usage",
+        "Low sleep",
+        "Eye strain",
+        "Task switching"
+    ]
+
+    values = np.array([
         screen_time,
         night_usage,
         10 - sleep,
         eye_strain,
         task_switch
-    ]
+    ])
 
-    fig, ax = plt.subplots(figsize=(5, 3))
-    ax.barh(factors, values, color="#cdb4db")
+    y_pos = np.arange(len(factors))
+
+    fig, ax = plt.subplots(figsize=(5, 3.5))
+    ax.hlines(y=y_pos, xmin=0, xmax=values, color="#cdb4db", linewidth=3)
+    ax.plot(values, y_pos, "o", color="#6c63ff", markersize=8)
+
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(factors)
     ax.set_xlabel("Relative impact")
+    ax.set_title("Fatigue contributors")
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
 
     st.pyplot(fig)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ================= ADVICE CARD =================
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("Suggestions")
+
+    tips = []
+
+    if screen_time > 8:
+        tips.append("Reduce overall daily screen exposure.")
+    if night_usage > 2:
+        tips.append("Avoid screens close to bedtime.")
+    if sleep < 6:
+        tips.append("Aim for longer, consistent sleep.")
+    if eye_strain >= 4:
+        tips.append("Take frequent eye breaks (20–20–20 rule).")
+    if task_switch > 30:
+        tips.append("Reduce frequent context switching.")
+
+    if tips:
+        for t in tips:
+            st.write("•", t)
+    else:
+        st.write("Your habits look balanced. Keep maintaining them.")
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= FOOTER =================
