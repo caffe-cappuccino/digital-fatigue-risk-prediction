@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 import time
 
 # ================= PAGE CONFIG =================
 st.set_page_config(
-    page_title="Digital Fatigue Analytics",
+    page_title="Digital Fatigue Evaluation",
     page_icon="📊",
     layout="wide"
 )
@@ -17,26 +17,24 @@ st.set_page_config(
 st.markdown("""
 <style>
 body {
-    background-color: #0f1117;
+    background-color: #0e1117;
     color: #e6e6e6;
 }
 h1, h2, h3 {
-    color: #e6e6e6;
+    color: #ffffff;
 }
 .card {
-    background: #161a23;
+    background: #161b22;
     padding: 24px;
     border-radius: 16px;
     border: 1px solid rgba(255,255,255,0.08);
     margin-bottom: 24px;
 }
 .metric {
-    text-align: center;
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 700;
 }
 .label {
-    font-size: 13px;
     opacity: 0.7;
 }
 </style>
@@ -73,115 +71,102 @@ def train_model(data):
         + X["task_switching_rate"] * 1.5
     )
     y = (raw - raw.min()) / (raw.max() - raw.min()) * 100
-
     Xtr, _, ytr, _ = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = RandomForestRegressor(n_estimators=250, max_depth=12, random_state=42)
+
+    model = RandomForestRegressor(n_estimators=300, max_depth=12, random_state=42)
     model.fit(Xtr, ytr)
     return model, y.mean()
 
 model, avg_fatigue = train_model(df)
 
 # ================= HEADER =================
-st.title("Digital Fatigue Analytics")
-st.write("Advanced analysis of digital behaviour and fatigue risk")
+st.title("Digital Fatigue Evaluation System")
+st.write("Interactive 3D evaluation of digital behaviour and fatigue risk")
 
-# ================= TABS =================
-tab_input, tab_overview, tab_analysis, tab_advice = st.tabs(
-    ["📝 Input", "📊 Overview", "📈 Analysis", "💡 Advice"]
-)
+# ================= INPUT =================
+st.markdown("<div class='card'>", unsafe_allow_html=True)
+c1, c2 = st.columns(2)
 
-# ================= INPUT TAB =================
-with tab_input:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
+with c1:
+    screen = st.slider("Screen Time (hours)", 1.0, 16.0, 6.0, 0.5)
+    night = st.slider("Late-night Usage (hours)", 0.0, 8.0, 1.5, 0.5)
+    sleep = st.slider("Sleep Duration (hours)", 3.0, 10.0, 7.0, 0.5)
 
-    with c1:
-        screen = st.slider("Screen Time (hours)", 1.0, 16.0, 6.0, 0.5)
-        night = st.slider("Late-night Usage (hours)", 0.0, 8.0, 1.5, 0.5)
-        sleep = st.slider("Sleep Duration (hours)", 3.0, 10.0, 7.0, 0.5)
+with c2:
+    cont = st.slider("Longest Continuous Usage (minutes)", 10, 300, 90, 10)
+    eye = st.select_slider("Eye Strain Level", [1,2,3,4,5], 3)
+    switch = st.slider("Task Switching Frequency", 1, 50, 18)
 
-    with c2:
-        cont = st.slider("Longest Continuous Usage (min)", 10, 300, 90, 10)
-        eye = st.select_slider("Eye Strain Level", [1,2,3,4,5], 3)
-        switch = st.slider("Task Switching Frequency", 1, 50, 18)
+run = st.button("Run Evaluation")
+st.markdown("</div>", unsafe_allow_html=True)
 
-    analyze = st.button("Run Analysis")
-    st.markdown("</div>", unsafe_allow_html=True)
+# ================= EVALUATION =================
+if run:
+    with st.spinner("Evaluating digital fatigue..."):
+        time.sleep(1.2)
 
-# ================= RUN ANALYSIS =================
-if analyze:
     user_df = pd.DataFrame([[screen, cont, night, 4, sleep, eye, switch]], columns=FEATURES)
     fatigue = float(model.predict(user_df)[0])
     fatigue = np.clip(fatigue, 0, 100)
 
-    # ================= OVERVIEW =================
-    with tab_overview:
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        c1.markdown(f"<div class='metric'>{fatigue:.1f}</div><div class='label'>Your Score</div>", unsafe_allow_html=True)
-        c2.markdown(f"<div class='metric'>{avg_fatigue:.1f}</div><div class='label'>Average</div>", unsafe_allow_html=True)
-        c3.markdown(f"<div class='metric'>{fatigue-avg_fatigue:+.1f}</div><div class='label'>Difference</div>", unsafe_allow_html=True)
+    # ================= KPIs =================
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
+    c1.markdown(f"<div class='metric'>{fatigue:.1f}</div><div class='label'>Your Score</div>", unsafe_allow_html=True)
+    c2.markdown(f"<div class='metric'>{avg_fatigue:.1f}</div><div class='label'>Average User</div>", unsafe_allow_html=True)
+    c3.markdown(f"<div class='metric'>{fatigue-avg_fatigue:+.1f}</div><div class='label'>Difference</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        # Animated bar (simple + safe)
-        bar = st.progress(0)
-        for i in range(int(fatigue)):
-            time.sleep(0.01)
-            bar.progress(i+1)
+    # ================= CONTRIBUTIONS =================
+    factors = ["Screen Time", "Night Usage", "Low Sleep", "Eye Strain", "Task Switching"]
+    values = np.array([screen, night, 10-sleep, eye, switch])
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    # ================= 3D INTERACTIVE GRAPH =================
+    fig3d = go.Figure(
+        data=[go.Scatter3d(
+            x=values,
+            y=np.arange(len(values)),
+            z=[fatigue]*len(values),
+            mode='markers+lines',
+            marker=dict(
+                size=8,
+                color=values,
+                colorscale='Blues',
+                opacity=0.85
+            )
+        )]
+    )
 
-    # ================= ANALYSIS =================
-    with tab_analysis:
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
+    fig3d.update_layout(
+        title="3D Fatigue Contribution Space",
+        scene=dict(
+            xaxis_title="Impact",
+            yaxis_title="Factor Index",
+            zaxis_title="Fatigue Score"
+        ),
+        height=500,
+        transition_duration=900
+    )
 
-        factors = ["Screen", "Night", "Low Sleep", "Eye Strain", "Task Switching"]
-        values = [screen, night, 10-sleep, eye, switch]
+    st.plotly_chart(fig3d, use_container_width=True)
 
-        fig, ax = plt.subplots(figsize=(6,4))
-        ax.barh(factors, values, color="#3b82f6")
-        ax.set_title("Contribution Breakdown")
-        ax.set_xlabel("Relative Impact")
-        st.pyplot(fig)
+    # ================= FACTOR + ADVICE =================
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.subheader("Key Contributors & Advice")
 
-        fig2, ax2 = plt.subplots(figsize=(4,4))
-        angles = np.linspace(0, 2*np.pi, len(values), endpoint=False)
-        values_r = values + [values[0]]
-        angles_r = np.append(angles, angles[0])
+    advice_map = {
+        "Screen Time": "Reduce overall daily screen exposure.",
+        "Night Usage": "Avoid screens at least 1 hour before sleep.",
+        "Low Sleep": "Increase sleep duration for recovery.",
+        "Eye Strain": "Apply the 20–20–20 eye care rule.",
+        "Task Switching": "Reduce frequent context switching."
+    }
 
-        ax2.plot(angles_r, values_r, color="#3b82f6")
-        ax2.fill(angles_r, values_r, alpha=0.3)
-        ax2.set_xticks(angles)
-        ax2.set_xticklabels(factors)
-        ax2.set_yticklabels([])
-        ax2.set_title("User Digital Profile")
-        st.pyplot(fig2)
+    for f, v in sorted(zip(factors, values), key=lambda x: x[1], reverse=True):
+        st.write(f"**{f}** → Impact: {v:.2f}")
+        st.write(f"• {advice_map[f]}")
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # ================= ADVICE =================
-    with tab_advice:
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.subheader("Personalized Advice")
-
-        advice = []
-        if screen > 8:
-            advice.append("Reduce overall screen exposure.")
-        if night > 2:
-            advice.append("Avoid screens before bedtime.")
-        if sleep < 6:
-            advice.append("Increase sleep duration.")
-        if eye >= 4:
-            advice.append("Apply the 20-20-20 eye rule.")
-        if switch > 30:
-            advice.append("Limit frequent task switching.")
-
-        if advice:
-            for a in advice:
-                st.write("•", a)
-        else:
-            st.success("Your habits look balanced. Keep it up.")
-
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= FOOTER =================
-st.caption("Single-file • No external deps • Stable • Done.")
+st.caption("3D • Interactive • Animated • Evaluation-ready")
