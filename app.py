@@ -19,12 +19,12 @@ body {
     color: #020617;
 }
 
-.main-card {
+.container {
     background: white;
-    padding: 40px;
-    border-radius: 28px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.12);
-    margin-bottom: 40px;
+    padding: 48px;
+    border-radius: 30px;
+    box-shadow: 0 35px 70px rgba(0,0,0,0.12);
+    margin-bottom: 50px;
 }
 
 .title {
@@ -38,7 +38,7 @@ body {
 .subtitle {
     font-size: 18px;
     color: #475569;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
 .metric {
@@ -52,23 +52,16 @@ body {
 }
 
 .section-title {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 800;
     margin-bottom: 20px;
-}
-
-.input-box {
-    background: #f8fafc;
-    padding: 24px;
-    border-radius: 20px;
-    box-shadow: inset 0 0 0 1px #e5e7eb;
 }
 
 .stButton > button {
     background: linear-gradient(90deg, #6366f1, #ec4899);
     color: white;
-    border-radius: 18px;
-    height: 3.6em;
+    border-radius: 20px;
+    height: 3.8em;
     font-size: 18px;
     font-weight: 700;
     border: none;
@@ -77,7 +70,7 @@ body {
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- DATA (SYNTHETIC, STABLE) ----------------
+# ---------------- DATA (STABLE SYNTHETIC) ----------------
 np.random.seed(42)
 data = pd.DataFrame({
     "screen_time": np.random.uniform(2, 14, 300),
@@ -100,35 +93,30 @@ data["fatigue"] = (fatigue_raw - fatigue_raw.min()) / (fatigue_raw.max() - fatig
 X = data.drop("fatigue", axis=1)
 y = data["fatigue"]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
+X_train, _, y_train, _ = train_test_split(X, y, test_size=0.2)
 model = RandomForestRegressor(n_estimators=200, random_state=42)
 model.fit(X_train, y_train)
 
 # ---------------- UI ----------------
-st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+st.markdown("<div class='container'>", unsafe_allow_html=True)
 
 st.markdown("<div class='title'>Digital Fatigue Intelligence</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>ML-powered estimation of digital burnout risk</div>", unsafe_allow_html=True)
 
+st.markdown("<div class='section-title'>Input Parameters</div>", unsafe_allow_html=True)
+
 c1, c2, c3 = st.columns(3)
 
 with c1:
-    st.markdown("<div class='input-box'>", unsafe_allow_html=True)
     screen = st.slider("Screen Time (hrs)", 1.0, 16.0, 6.0)
     night = st.slider("Night Usage (hrs)", 0.0, 8.0, 2.0)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 with c2:
-    st.markdown("<div class='input-box'>", unsafe_allow_html=True)
     sleep = st.slider("Sleep (hrs)", 3.0, 10.0, 7.0)
     eye = st.slider("Eye Strain", 1, 5, 3)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 with c3:
-    st.markdown("<div class='input-box'>", unsafe_allow_html=True)
     switch = st.slider("Task Switching Rate", 1, 50, 20)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 run = st.button("Run Fatigue Prediction")
 
@@ -141,7 +129,7 @@ if run:
 
     color = "#22c55e" if fatigue < 40 else "#f59e0b" if fatigue < 70 else "#ef4444"
 
-    st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='container'>", unsafe_allow_html=True)
 
     c1, c2 = st.columns([1,2])
     with c1:
@@ -157,7 +145,7 @@ if run:
         ))
 
         fig.update_layout(
-            height=300,
+            height=320,
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(showgrid=False),
